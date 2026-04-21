@@ -28,25 +28,32 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 파일 처리 로직
-  const processNextInQueue = async (items: BatchItem[]) => {
-    const config: Config = { model: 'medium', device: 'cpu', numThreads: 1 };
-    for (const item of items) {
-      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
-      try {
-        const resultBlob = await removeBackground(item.original, {
-          ...config,
-          progress: (_, current, total) => {
-            const p = Math.round((current / total) * 100);
-            setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: p } : i));
-          }
-        });
-        const url = URL.createObjectURL(resultBlob);
-        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
-      } catch (e) {
-        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error' } : i));
-      }
+const processNextInQueue = async (items: BatchItem[]) => {
+  // 'medium' 대신 'isnet' 또는 'isnet_fp16'을 사용하세요.
+  const config = { 
+    model: 'isnet', 
+    device: 'cpu', 
+    numThreads: 1 
+  } as any; // 타입을 강제로 우회합니다.
+
+  for (const item of items) {
+    setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
+    try {
+      const resultBlob = await removeBackground(item.original, {
+        ...config,
+        progress: (_, current, total) => {
+          const p = Math.round((current / total) * 100);
+          setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: p } : i));
+        }
+      });
+      const url = URL.createObjectURL(resultBlob);
+      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
+    } catch (e) {
+      console.error("처리 오류:", e);
+      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error' } : i));
     }
-  };
+  }
+};
 
   const handleFiles = (files: FileList | File[]) => {
     const startIdx = batchItems.length;
