@@ -1,65 +1,97 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from 'react';
+import imglyRemoveBackground from '@imgly/background-removal';
 
 export default function Home() {
+  const [image, setImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setProgress(0);
+
+    try {
+      // 배경 제거 처리 (WASM 라이브러리가 브라우저에서 직접 실행됩니다)
+      const blob = await imglyRemoveBackground(file, {
+        progress: (key, current, total) => {
+          const percent = Math.round((current / total) * 100);
+          setProgress(percent);
+        }
+      });
+
+      const url = URL.createObjectURL(blob);
+      setImage(url);
+    } catch (error) {
+      console.error("배경 제거 중 오류 발생:", error);
+      alert("배경 제거 중 문제가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <header className="text-center mb-12">
+          <h1 className="text-4xl font-black text-blue-600 mb-2">Pebbly Easy Toolkit</h1>
+          <p className="text-gray-600">누구나 쉽게 만드는 AI 배경 제거 도구</p>
+        </header>
+
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+          <div className="p-8">
+            {/* 업로드 영역 */}
+            <div className="relative group border-4 border-dashed border-gray-200 rounded-2xl p-12 text-center hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={loading}
+              />
+              
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-blue-600 font-bold text-xl">배경 제거 중... {progress}%</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-5xl">🖼️</div>
+                  <p className="text-gray-500 font-medium text-lg">
+                    이곳을 클릭하거나 이미지를 드래그하세요
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 결과 표시 영역 */}
+            {image && !loading && (
+              <div className="mt-12 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-800">결과 이미지</h2>
+                  <a 
+                    href={image} 
+                    download="pebbly-result.png"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:scale-105"
+                  >
+                    무료 다운로드
+                  </a>
+                </div>
+                
+                {/* 투명도를 시각화하기 위해 체크박스 배경 무늬 적용 */}
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')]">
+                  <img src={image} alt="Background Removed" className="w-full h-auto max-h-[500px] object-contain mx-auto shadow-2xl" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
