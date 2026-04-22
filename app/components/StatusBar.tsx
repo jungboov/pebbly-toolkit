@@ -34,7 +34,7 @@ export function StatusBar({
 }: StatusBarProps) {
   if (modelStatus === 'loading') {
     return (
-      <div className="flex items-center gap-3 px-3 py-2 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] tracking-[0.12em] font-black uppercase min-w-0">
+      <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] md:text-xs tracking-[0.12em] font-black uppercase min-w-0">
         <span aria-live="polite" className="text-[#00ff00] animate-pulse">⋯</span>
         <span className="text-[#00ff00] whitespace-nowrap">INITIALIZING</span>
         <span className="text-[#00ff00]/60 whitespace-nowrap font-mono">{modelProgress}% / 43MB</span>
@@ -48,7 +48,7 @@ export function StatusBar({
 
   if (modelStatus === 'error') {
     return (
-      <div className="flex items-center gap-3 px-3 py-2 border border-red-500 bg-red-500/5 text-[10px] tracking-[0.12em] font-black uppercase min-w-0">
+      <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 border border-red-500 bg-red-500/5 text-[10px] md:text-xs tracking-[0.12em] font-black uppercase min-w-0">
         <span aria-live="polite" className="text-red-500">!!</span>
         <span className="text-red-500 whitespace-nowrap">MODEL_ERROR</span>
         <span className="flex-1 min-w-0 text-red-400/70 truncate normal-case tracking-normal">network or cache issue</span>
@@ -64,7 +64,7 @@ export function StatusBar({
 
   if (batchStatus === 'idle') {
     return (
-      <div className="flex items-center gap-3 px-3 py-2 border border-[#00ff00] bg-transparent text-[10px] tracking-[0.12em] font-black uppercase min-w-0 opacity-60">
+      <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 border border-[#00ff00] bg-transparent text-[10px] md:text-xs tracking-[0.12em] font-black uppercase min-w-0 opacity-60">
         <span aria-live="polite" className="text-[#00ff00]">○</span>
         <span className="text-[#00ff00] whitespace-nowrap">IDLE</span>
         <span className="text-[#00ff00]/60 whitespace-nowrap font-mono">0/0</span>
@@ -78,7 +78,7 @@ export function StatusBar({
 
   if (batchStatus === 'processing') {
     return (
-      <div className="flex items-center gap-3 px-3 py-2 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] tracking-[0.12em] font-black uppercase min-w-0">
+      <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] md:text-xs tracking-[0.12em] font-black uppercase min-w-0">
         <span aria-live="polite" className="text-[#00ff00] animate-pulse">●</span>
         <span className="text-[#00ff00] whitespace-nowrap">PROCESSING</span>
         <span className="text-[#00ff00]/80 whitespace-nowrap font-mono">
@@ -93,7 +93,7 @@ export function StatusBar({
   }
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] tracking-[0.12em] font-black uppercase min-w-0">
+    <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 border border-[#00ff00] bg-[#00ff00]/5 text-[10px] md:text-xs tracking-[0.12em] font-black uppercase min-w-0">
       <span aria-live="polite" className="text-[#00ff00]">✓</span>
       <span className="text-[#00ff00] whitespace-nowrap">READY</span>
       <span className="text-[#00ff00]/80 whitespace-nowrap font-mono">
