@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { removeBackground, Config } from '@imgly/background-removal';
 import JSZip from 'jszip';
-import { themes } from './themes'; // ThemeName 타입은 이제 필요 없으므로 제거
+import { themes } from './themes';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface BatchItem {
@@ -15,49 +15,80 @@ interface BatchItem {
   fileName: string;
 }
 
+type UserPlan = 'free' | 'pro' | 'pro_plus';
+
+// 결제 연동 전까지는 free로 고정. 추후 인증/구독 상태에서 동적으로 결정.
+const PLAN_LIMITS: Record<UserPlan, { concurrency: number; maxBatch: number }> = {
+  free: { concurrency: 2, maxBatch: 10 },
+  pro: { concurrency: 4, maxBatch: 50 },
+  pro_plus: {
+    concurrency:
+      typeof navigator !== 'undefined'
+        ? Math.min(navigator.hardwareConcurrency || 4, 8)
+        : 4,
+    maxBatch: Infinity,
+  },
+};
+
 export default function Home() {
   // 테마를 'pixel'로 아예 고정합니다.
   const t = themes.pixel;
-  
+
+  const currentPlan: UserPlan = 'free';
+  const { concurrency, maxBatch } = PLAN_LIMITS[currentPlan];
+
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [compareSlider, setCompareSlider] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 파일 처리 로직
-const processNextInQueue = async (items: BatchItem[]) => {
-  // 'medium' 대신 'isnet' 또는 'isnet_fp16'을 사용하세요.
-  const config: Partial<Config> & { numThreads?: number } = {
-    model: 'isnet',
-    device: 'cpu',
-    numThreads: 1,
-  };
+  const processNextInQueue = async (items: BatchItem[]) => {
+    const config: Partial<Config> & { numThreads?: number } = {
+      model: 'isnet',
+      device: 'cpu',
+      numThreads: 1,
+    };
 
-  for (const item of items) {
-    setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
-    try {
-      const resultBlob = await removeBackground(item.original, {
-        ...config,
-        progress: (_, current, total) => {
-          const p = Math.round((current / total) * 100);
-          setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: p } : i));
-        }
-      });
-      const url = URL.createObjectURL(resultBlob);
-      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
-    } catch (e) {
-      console.error("처리 오류:", e);
-      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error' } : i));
-    }
-  }
-};
+    const queue: BatchItem[] = [...items];
+
+    const processOne = async (item: BatchItem) => {
+      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
+      try {
+        const resultBlob = await removeBackground(item.original, {
+          ...config,
+          progress: (_, current, total) => {
+            const p = Math.round((current / total) * 100);
+            setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: p } : i));
+          }
+        });
+        const url = URL.createObjectURL(resultBlob);
+        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
+      } catch (e) {
+        console.error("처리 오류:", e);
+        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error' } : i));
+      }
+    };
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const next = queue.shift();
+        if (next) await processOne(next);
+      }
+    };
+
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  };
 
   const handleFiles = (files: FileList | File[]) => {
     const startIdx = batchItems.length;
-    const filesArray = Array.from(files);
+    let filesArray = Array.from(files);
+    if (filesArray.length > maxBatch) {
+      console.warn(`배치 크기 초과 (${filesArray.length} > ${maxBatch}). 초과분 ${filesArray.length - maxBatch}개 무시됨.`);
+      filesArray = filesArray.slice(0, maxBatch);
+    }
     const newItems: BatchItem[] = filesArray.map(file => ({
       id: crypto.randomUUID(),
       original: URL.createObjectURL(file),
@@ -168,7 +199,7 @@ const processNextInQueue = async (items: BatchItem[]) => {
               </div>
             ) : (
               <div className="relative w-full h-full p-8 flex items-center justify-center">
-                <div className="relative max-h-full shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] bg-gray-600 overflow-hidden border-2 border-[#00ff00]">
+                <div className="relative max-h-full shadow-2xl checkerboard-bg overflow-hidden border-2 border-[#00ff00]">
                   <img src={selectedItem.processed || selectedItem.original} className={`max-h-[500px] object-contain block ${selectedItem.status === 'processing' ? 'opacity-30 blur-sm' : ''}`} alt="Main View" />
                   
                   {selectedItem.processed && (
