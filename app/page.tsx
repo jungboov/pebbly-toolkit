@@ -333,13 +333,13 @@ export default function Home() {
             <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={e => e.target.files && handleFiles(e.target.files)} />
           </div>
 
-          {/* 우측: STATUS(flex-1) + CONTROL(flex-shrink-0) — 뷰어 높이에 맞춰 stretch */}
+          {/* 우측: STATUS + CONTROL — 자연 높이 스택 (h-full/flex 연쇄 제거) */}
           <div className="lg:col-span-4 min-w-0">
-            <div className="space-y-6 h-full flex flex-col min-w-0">
+            <div className="space-y-6 min-w-0">
 
               {/* STATUS 카드 */}
-              <div className={`${t.card} p-6 flex-1 overflow-hidden min-w-0`}>
-                <div className="flex flex-col h-full gap-4 overflow-hidden min-w-0">
+              <div className={`${t.card} p-6 overflow-hidden min-w-0`}>
+                <div className="space-y-4 min-w-0">
 
                   {/* HEADER: 상태 아이콘 + 라벨 (항상) */}
                   <div className="flex-shrink-0 min-w-0">
