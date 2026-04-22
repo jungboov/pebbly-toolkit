@@ -5,6 +5,7 @@ import { removeBackground, Config } from '@imgly/background-removal';
 import JSZip from 'jszip';
 import { themes } from './themes';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PixelGauge } from './components/PixelGauge';
 
 interface BatchItem {
   id: string;
@@ -233,6 +234,16 @@ export default function Home() {
     return { total, completed, active, avgMs, etaMs, remaining, totalTimeMs };
   }, [batchItems, concurrency]);
 
+  const overallPercentage = useMemo(() => {
+    if (batchItems.length === 0) return 0;
+    const sum = batchItems.reduce((acc, i) => {
+      if (i.status === 'completed') return acc + 100;
+      if (i.status === 'processing') return acc + (i.progress || 0);
+      return acc;
+    }, 0);
+    return Math.round(sum / batchItems.length);
+  }, [batchItems]);
+
   const formatSec = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
   const formatEta = (ms: number) => ms <= 0 ? '—' : `~${Math.ceil(ms / 1000)}s`;
 
@@ -335,8 +346,8 @@ export default function Home() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># AI_ENGINE</p>
                     <div className="text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em] opacity-80">AI Engine 준비 중</div>
                     <div className="text-[#00ff00] text-[10px] opacity-60 mt-1">43MB 다운로드 · 처음 1회만</div>
-                    <div className="mt-3 h-1 bg-[#00ff00]/20 overflow-hidden">
-                      <div className="h-full bg-[#00ff00] transition-all duration-300" style={{ width: `${Math.max(modelProgress, 3)}%` }} />
+                    <div className="mt-3">
+                      <PixelGauge value={modelProgress} blocks={20} height="sm" glow />
                     </div>
                   </div>
                   <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
@@ -396,7 +407,30 @@ export default function Home() {
                         <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
                       </div>
                     </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                        <span>OVERALL</span>
+                        <span>{overallPercentage}%</span>
+                      </div>
+                      <PixelGauge value={overallPercentage} blocks={10} height="md" glow />
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                        {batchStats.completed} / {batchStats.total} PROCESSED
+                      </div>
+                    </div>
                   </div>
+                  {selectedItem && selectedItem.status === 'processing' && (
+                    <div className="mt-4 pt-3 border-t border-[#00ff00]/20 space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50"># ACTIVE</p>
+                      <div className="text-[11px] font-mono text-[#00ff00]/80 truncate">
+                        {selectedItem.fileName}
+                      </div>
+                      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                        <span>CURRENT</span>
+                        <span>{selectedItem.progress}%</span>
+                      </div>
+                      <PixelGauge value={selectedItem.progress} blocks={10} height="md" glow />
+                    </div>
+                  )}
                   <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
                     <div className="text-[#00ff00] text-[10px] opacity-60">유출 없음 · 100% 로컬</div>
@@ -471,7 +505,17 @@ export default function Home() {
               >
                 <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
                 {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
-                {item.status === 'processing' && <div className="absolute inset-0 flex items-center justify-center bg-black/90 text-xs font-black text-[#00ff00] z-20">{item.progress}%</div>}
+                {item.status === 'processing' && (
+                  <>
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <div className="absolute top-1 right-1 bg-black/70 text-[#00ff00] text-[9px] font-black px-1 leading-none py-0.5 z-20">
+                      {item.progress}%
+                    </div>
+                    <div className="absolute bottom-1 left-1 right-1 z-20">
+                      <PixelGauge value={item.progress} blocks={5} height="sm" />
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}
