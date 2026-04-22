@@ -334,92 +334,106 @@ export default function Home() {
           </div>
 
           {/* 우측: STATUS(flex-1) + CONTROL(flex-shrink-0) — 뷰어 높이에 맞춰 stretch */}
-          <div className="lg:col-span-4 flex flex-col gap-6 min-w-0">
-            <div className={`${t.card} p-6 flex-1 flex flex-col w-full min-w-0 overflow-hidden shadow-[10px_10px_0px_#00ff0022]`}>
-              {modelStatus === 'loading' ? (
-                <>
-                  <div>
-                    <div className="text-2xl text-[#00ff00] animate-pulse leading-none">⋯</div>
-                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">INITIALIZING</div>
+          <div className="lg:col-span-4 min-w-0">
+            <div className="space-y-6 h-full flex flex-col min-w-0">
+
+              {/* STATUS 카드 */}
+              <div className={`${t.card} p-6 flex-1 overflow-hidden min-w-0`}>
+                <div className="flex flex-col h-full gap-4 overflow-hidden min-w-0">
+
+                  {/* HEADER: 상태 아이콘 + 라벨 (항상) */}
+                  <div className="flex-shrink-0 min-w-0">
+                    {modelStatus === 'loading' ? (
+                      <>
+                        <div className="text-2xl text-[#00ff00] animate-pulse leading-none">⋯</div>
+                        <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">INITIALIZING</div>
+                      </>
+                    ) : modelStatus === 'error' ? (
+                      <>
+                        <div className="text-2xl text-red-500 leading-none">!!</div>
+                        <div className="font-black uppercase tracking-[0.3em] text-red-500 text-sm mt-2">MODEL_ERROR</div>
+                      </>
+                    ) : batchStatus === 'idle' ? (
+                      <>
+                        <div className="text-2xl text-[#00ff00] leading-none">○</div>
+                        <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">IDLE</div>
+                        <div className="text-[#00ff00] text-[11px] opacity-60 uppercase tracking-widest mt-3">
+                          대기 중 · 이미지를 드롭하세요
+                        </div>
+                      </>
+                    ) : batchStatus === 'processing' ? (
+                      <>
+                        <div className="text-2xl text-[#00ff00] animate-pulse leading-none">●</div>
+                        <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">PROCESSING</div>
+                        <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
+                          {batchStats.completed}/{batchStats.total} COMPLETE · {batchStats.active} ACTIVE
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-2xl text-[#00ff00] leading-none">✓</div>
+                        <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">READY</div>
+                        <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
+                          {batchStats.completed}/{batchStats.total} COMPLETE
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># AI_ENGINE</p>
-                    <div className="text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em] opacity-80">AI Engine 준비 중</div>
-                    <div className="text-[#00ff00] text-[10px] opacity-60 mt-1">43MB 다운로드 · 처음 1회만</div>
-                    <div className="mt-3">
-                      <PixelGauge value={modelProgress} blocks={20} height="sm" glow />
-                    </div>
-                  </div>
-                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
-                    <div className="text-[#00ff00] text-[10px] opacity-60">100% 브라우저 처리 · 유출 없음</div>
-                  </div>
-                </>
-              ) : modelStatus === 'error' ? (
-                <>
-                  <div>
-                    <div className="text-2xl text-red-500 leading-none">!!</div>
-                    <div className="font-black uppercase tracking-[0.3em] text-red-500 text-sm mt-2">MODEL_ERROR</div>
-                  </div>
-                  <div className="mt-6 border-t border-red-500/30 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-red-500 opacity-70 mb-3"># DETAILS</p>
-                    <div className="text-red-400 text-[10px] opacity-80 uppercase tracking-widest leading-relaxed">네트워크 또는 브라우저 캐시 문제일 수 있습니다</div>
-                    <button onClick={handleRetryModel}
-                      className="mt-4 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] border border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all">
-                      &gt;&gt; Retry
-                    </button>
-                  </div>
-                </>
-              ) : batchStatus === 'idle' ? (
-                <>
-                  <div>
-                    <div className="text-2xl text-[#00ff00] leading-none">○</div>
-                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">IDLE</div>
-                  </div>
-                  <div className="mt-3 text-[#00ff00] text-[11px] opacity-60 uppercase tracking-widest">
-                    대기 중 · 이미지를 드롭하세요
-                  </div>
-                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
-                    <div className="text-[#00ff00] text-[10px] opacity-60 leading-relaxed">
-                      이미지는 브라우저에서만 처리되며, 외부로 전송되지 않습니다.
-                    </div>
-                  </div>
-                </>
-              ) : batchStatus === 'processing' ? (
-                <>
-                  <div>
-                    <div className="text-2xl text-[#00ff00] animate-pulse leading-none">●</div>
-                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">PROCESSING</div>
-                    <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
-                      {batchStats.completed}/{batchStats.total} COMPLETE · {batchStats.active} ACTIVE
-                    </div>
-                  </div>
-                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># METRICS</p>
-                    <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
-                      <div className="flex justify-between min-w-0 gap-2">
-                        <span className="opacity-60 truncate min-w-0">ETA:</span>
-                        <span className="font-black flex-shrink-0 whitespace-nowrap">{formatEta(batchStats.etaMs)}</span>
-                      </div>
-                      <div className="flex justify-between min-w-0 gap-2">
-                        <span className="opacity-60 truncate min-w-0">AVG:</span>
-                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+
+                  {/* AI_ENGINE (INITIALIZING 중) */}
+                  {modelStatus === 'loading' && (
+                    <div className="flex-shrink-0 pt-3 border-t border-[#00ff00]/20 min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># AI_ENGINE</p>
+                      <div className="text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em] opacity-80">AI Engine 준비 중</div>
+                      <div className="text-[#00ff00] text-[10px] opacity-60 mt-1">43MB 다운로드 · 처음 1회만</div>
+                      <div className="mt-3">
+                        <PixelGauge value={modelProgress} blocks={20} height="sm" glow />
                       </div>
                     </div>
-                    <div className="mt-4 space-y-2 min-w-0">
-                      <div className="flex justify-between min-w-0 gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
-                        <span className="truncate min-w-0">OVERALL</span>
-                        <span className="flex-shrink-0 whitespace-nowrap">{overallPercentage}%</span>
+                  )}
+
+                  {/* DETAILS (MODEL_ERROR) */}
+                  {modelStatus === 'error' && (
+                    <div className="flex-shrink-0 pt-3 border-t border-red-500/30 min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-red-500 opacity-70 mb-3"># DETAILS</p>
+                      <div className="text-red-400 text-[10px] opacity-80 uppercase tracking-widest leading-relaxed">네트워크 또는 브라우저 캐시 문제일 수 있습니다</div>
+                      <button onClick={handleRetryModel}
+                        className="mt-4 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] border border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all">
+                        &gt;&gt; Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {/* METRICS (PROCESSING) */}
+                  {modelStatus !== 'loading' && modelStatus !== 'error' && batchStatus === 'processing' && (
+                    <div className="flex-shrink-0 pt-3 border-t border-[#00ff00]/20 space-y-3 min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50"># METRICS</p>
+                      <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
+                        <div className="flex justify-between min-w-0 gap-2">
+                          <span className="opacity-60 truncate min-w-0">ETA:</span>
+                          <span className="font-black flex-shrink-0 whitespace-nowrap">{formatEta(batchStats.etaMs)}</span>
+                        </div>
+                        <div className="flex justify-between min-w-0 gap-2">
+                          <span className="opacity-60 truncate min-w-0">AVG:</span>
+                          <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                        </div>
                       </div>
-                      <PixelGauge value={overallPercentage} blocks={10} height="md" glow />
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60 truncate">
-                        {batchStats.completed} / {batchStats.total} PROCESSED
+                      <div className="space-y-2 min-w-0">
+                        <div className="flex justify-between min-w-0 gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                          <span className="truncate min-w-0">OVERALL</span>
+                          <span className="flex-shrink-0 whitespace-nowrap">{overallPercentage}%</span>
+                        </div>
+                        <PixelGauge value={overallPercentage} blocks={10} height="md" glow />
+                        <div className="text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60 truncate">
+                          {batchStats.completed} / {batchStats.total} PROCESSED
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {selectedItem && selectedItem.status === 'processing' && (
-                    <div className="mt-4 pt-3 border-t border-[#00ff00]/20 space-y-2 min-w-0">
+                  )}
+
+                  {/* ACTIVE (PROCESSING + 선택된 항목이 처리 중) */}
+                  {modelStatus !== 'loading' && modelStatus !== 'error' && batchStatus === 'processing' && selectedItem?.status === 'processing' && (
+                    <div className="flex-shrink-0 pt-3 border-t border-[#00ff00]/20 space-y-2 overflow-hidden min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50"># ACTIVE</p>
                       <div className="text-[11px] font-mono text-[#00ff00]/80 truncate min-w-0">
                         {selectedItem.fileName}
@@ -431,58 +445,66 @@ export default function Home() {
                       <PixelGauge value={selectedItem.progress} blocks={10} height="md" glow />
                     </div>
                   )}
-                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
-                    <div className="text-[#00ff00] text-[10px] opacity-60">유출 없음 · 100% 로컬</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <div className="text-2xl text-[#00ff00] leading-none">✓</div>
-                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">READY</div>
-                    <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
-                      {batchStats.completed}/{batchStats.total} COMPLETE
-                    </div>
-                  </div>
-                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># SUMMARY</p>
-                    <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
-                      <div className="flex justify-between min-w-0 gap-2">
-                        <span className="opacity-60 truncate min-w-0">TOTAL_TIME:</span>
-                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.totalTimeMs > 0 ? formatSec(batchStats.totalTimeMs) : '—'}</span>
-                      </div>
-                      <div className="flex justify-between min-w-0 gap-2">
-                        <span className="opacity-60 truncate min-w-0">AVG:</span>
-                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
-                    <div className="text-[#00ff00] text-[10px] font-black uppercase tracking-[0.25em] text-right opacity-80 animate-pulse">
-                      ↓ DOWNLOAD_READY
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
 
-            <div className={`${t.card} p-6 space-y-3 flex-shrink-0 w-full min-w-0 shadow-[10px_10px_0px_#00ff0022]`}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># CONTROL</p>
-              <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
-                className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
-                {isDownloading ? ">> Archiving..." : `Download_Results (${batchStats.completed})`}
-              </button>
-              <button onClick={() => {
-                batchItems.forEach(item => {
-                  URL.revokeObjectURL(item.original);
-                  if (item.processed) URL.revokeObjectURL(item.processed);
-                });
-                setBatchItems([]);
-                setSelectedIndex(null);
-              }} className="w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]">
-                Clear_Cache
-              </button>
+                  {/* SUMMARY (READY) */}
+                  {modelStatus !== 'loading' && modelStatus !== 'error' && batchStatus === 'ready' && (
+                    <div className="flex-shrink-0 pt-3 border-t border-[#00ff00]/20 space-y-3 min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50"># SUMMARY</p>
+                      <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
+                        <div className="flex justify-between min-w-0 gap-2">
+                          <span className="opacity-60 truncate min-w-0">TOTAL_TIME:</span>
+                          <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.totalTimeMs > 0 ? formatSec(batchStats.totalTimeMs) : '—'}</span>
+                        </div>
+                        <div className="flex justify-between min-w-0 gap-2">
+                          <span className="opacity-60 truncate min-w-0">AVG:</span>
+                          <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FOOTER: 하단 고정 (ERROR 제외) */}
+                  {modelStatus !== 'error' && (
+                    <div className="mt-auto flex-shrink-0 pt-3 border-t border-[#00ff00]/20 min-w-0">
+                      {batchStatus === 'ready' ? (
+                        <div className="text-[#00ff00] text-[10px] font-black uppercase tracking-[0.25em] text-right opacity-80 animate-pulse">
+                          ↓ DOWNLOAD_READY
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
+                          <div className="text-[#00ff00] text-[10px] opacity-60 leading-relaxed">
+                            {batchStatus === 'idle'
+                              ? '이미지는 브라우저에서만 처리되며, 외부로 전송되지 않습니다.'
+                              : '유출 없음 · 100% 로컬'}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* CONTROL 카드 */}
+              <div className={`${t.card} p-6 flex-shrink-0 space-y-3 min-w-0`}>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># CONTROL</p>
+                <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
+                  className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
+                  {isDownloading ? ">> Archiving..." : `Download_Results (${batchStats.completed})`}
+                </button>
+                <button onClick={() => {
+                  batchItems.forEach(item => {
+                    URL.revokeObjectURL(item.original);
+                    if (item.processed) URL.revokeObjectURL(item.processed);
+                  });
+                  setBatchItems([]);
+                  setSelectedIndex(null);
+                }} className="w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]">
+                  Clear_Cache
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
