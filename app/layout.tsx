@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { GlobalStyles } from './themes';
 
 // 1. 폰트 설정
 const geistSans = Geist({
@@ -31,10 +30,6 @@ export default function RootLayout({
       lang="ko" 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        {/* themes.ts에서 정의한 전역 애니메이션 스타일 주입 */}
-        <style dangerouslySetInnerHTML={{ __html: GlobalStyles }} />
-      </head>
       <body className="min-h-full flex flex-col bg-white text-black">
         {children}
       </body>
