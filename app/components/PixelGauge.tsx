@@ -18,14 +18,14 @@ export const PixelGauge = memo(function PixelGauge({
   const heightClass = height === 'sm' ? 'h-1.5' : 'h-3';
 
   return (
-    <div className="flex gap-[2px] w-full">
+    <div className="flex gap-[2px] w-full min-w-0">
       {Array.from({ length: blocks }).map((_, idx) => {
         const isFilled = idx < filledBlocks;
         const isCurrent = isFilled && idx === filledBlocks - 1;
         return (
           <div
             key={idx}
-            className={`flex-1 ${heightClass} transition-all duration-200 ${
+            className={`flex-1 min-w-0 ${heightClass} transition-all duration-200 ${
               isFilled
                 ? `bg-[#00ff00]${isCurrent ? ' animate-pulse' : ''}${glow ? ' shadow-[0_0_4px_#00ff00]' : ''}`
                 : 'bg-[#00ff00]/5 border border-[#00ff00]/20'
