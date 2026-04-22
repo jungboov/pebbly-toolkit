@@ -42,8 +42,11 @@ export default function Home() {
   const [compareSlider, setCompareSlider] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [modelProgress, setModelProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastCompletedIdRef = useRef<string | null>(null);
 
   const processNextInQueue = async (items: BatchItem[]) => {
     const config: Partial<Config> & { numThreads?: number } = {
@@ -52,6 +55,8 @@ export default function Home() {
       numThreads: 1,
     };
 
+    setModelStatus(prev => (prev === 'idle' || prev === 'error') ? 'loading' : prev);
+
     const queue: BatchItem[] = [...items];
 
     const processOne = async (item: BatchItem) => {
@@ -59,16 +64,30 @@ export default function Home() {
       try {
         const resultBlob = await removeBackground(item.original, {
           ...config,
-          progress: (_, current, total) => {
+          progress: (key, current, total) => {
             const p = Math.round((current / total) * 100);
+            // 모델 로딩 phase인지 heuristic 판별 (fetch/download/compute 등)
+            const isModelPhase = /fetch|download|compute/i.test(key);
+            if (isModelPhase) {
+              setModelProgress(p);
+              return;
+            }
+            // inference phase: 이 단계까지 왔으면 모델은 이미 로드됨
             setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, progress: p } : i));
+            if (p >= 30) {
+              setModelStatus(prev => prev === 'loading' ? 'ready' : prev);
+            }
           }
         });
         const url = URL.createObjectURL(resultBlob);
+        lastCompletedIdRef.current = item.id;
         setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
+        // 첫 item이 끝까지 성공했다면 모델은 확실히 ready
+        setModelStatus(prev => prev === 'loading' ? 'ready' : prev);
       } catch (e) {
         console.error("처리 오류:", e);
         setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error' } : i));
+        setModelStatus(prev => prev === 'loading' ? 'error' : prev);
       }
     };
 
@@ -80,6 +99,35 @@ export default function Home() {
     };
 
     await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  };
+
+  // 자동 점프: 새로 완료된 item으로 selectedIndex 전환
+  // (사용자가 이미 완료된 다른 썸네일을 선택했다면 방해하지 않음)
+  useEffect(() => {
+    const lastId = lastCompletedIdRef.current;
+    if (!lastId) return;
+    const idx = batchItems.findIndex(i => i.id === lastId);
+    if (idx === -1 || batchItems[idx].status !== 'completed') return;
+
+    setSelectedIndex(prevSel => {
+      if (prevSel === null) return idx;
+      const currentSelected = batchItems[prevSel];
+      if (!currentSelected || currentSelected.status === 'pending' || currentSelected.status === 'processing') {
+        return idx;
+      }
+      return prevSel;
+    });
+
+    lastCompletedIdRef.current = null;
+  }, [batchItems]);
+
+  const handleRetryModel = () => {
+    setModelStatus('idle');
+    setModelProgress(0);
+    const toRetry = batchItems.filter(i => i.status === 'pending' || i.status === 'error');
+    if (toRetry.length > 0) {
+      setTimeout(() => processNextInQueue(toRetry), 100);
+    }
   };
 
   const handleFiles = (files: FileList | File[]) => {
@@ -182,6 +230,59 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* 모델 로딩 배너 */}
+      <AnimatePresence>
+        {modelStatus === 'loading' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[90] bg-black border-2 border-[#00ff00] px-6 py-4 font-mono shadow-[0_0_30px_rgba(0,255,0,0.35)] w-[min(92vw,420px)]"
+          >
+            <div className="text-[#00ff00] text-sm font-black uppercase tracking-widest animate-pulse">
+              &gt;&gt; INITIALIZING_AI_ENGINE...
+            </div>
+            <div className="text-[#00ff00] text-[10px] opacity-60 uppercase tracking-widest mt-2">
+              약 43MB 다운로드 중 · 처음 1회만 필요합니다
+            </div>
+            <div className="text-[#00ff00] text-[10px] font-black uppercase tracking-widest mt-2">
+              # 사진은 어디에도 전송되지 않습니다 // 100% LOCAL
+            </div>
+            <div className="mt-3 h-1 bg-[#00ff00]/20 overflow-hidden">
+              <div
+                className="h-full bg-[#00ff00] transition-all duration-300"
+                style={{ width: `${Math.max(modelProgress, 3)}%` }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 모델 로딩 에러 배너 */}
+      <AnimatePresence>
+        {modelStatus === 'error' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[90] bg-black border-2 border-red-500 px-6 py-4 font-mono shadow-[0_0_30px_rgba(239,68,68,0.35)] w-[min(92vw,420px)]"
+          >
+            <div className="text-red-500 text-sm font-black uppercase tracking-widest">
+              !! MODEL_LOAD_FAILED
+            </div>
+            <div className="text-red-400 text-[10px] opacity-80 uppercase tracking-widest mt-2">
+              네트워크 또는 브라우저 캐시 문제일 수 있습니다
+            </div>
+            <button
+              onClick={handleRetryModel}
+              className="mt-3 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] border border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all"
+            >
+              &gt;&gt; Retry
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-[1400px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12 relative z-10">
         <div className="lg:col-span-8 space-y-10">
           <header>
@@ -236,17 +337,25 @@ export default function Home() {
           {/* 썸네일 바 */}
           <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide">
             <button onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 w-20 h-20 border-2 border-[#00ff00] opacity-30 hover:opacity-100 flex items-center justify-center text-xl transition-all">+</button>
-            {batchItems.map((item, idx) => (
-              <div key={item.id} onClick={() => { setSelectedIndex(idx); setCompareSlider(50); }}
-                className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all 
-                  ${selectedIndex === idx ? 'border-[#00ff00] scale-105 shadow-[0_0_15px_#00ff00]' : 'border-transparent opacity-40 hover:opacity-100'}
-                  ${item.status === 'processing' ? 'animate-pulse' : ''}`}
-              >
-                <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
-                {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
-                {item.status === 'processing' && <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-[10px] font-bold text-[#00ff00] z-20">{item.progress}%</div>}
-              </div>
-            ))}
+            {batchItems.map((item, idx) => {
+              const isSelected = selectedIndex === idx;
+              const stateClass = isSelected
+                ? 'border-[#00ff00] scale-105 shadow-[0_0_15px_#00ff00]'
+                : item.status === 'processing'
+                  ? 'border-[#00ff00]/60 opacity-40 hover:opacity-100'
+                  : item.status === 'completed'
+                    ? 'border-transparent opacity-60 hover:opacity-100 shadow-[0_0_6px_rgba(0,255,0,0.25)]'
+                    : 'border-transparent opacity-40 hover:opacity-100';
+              return (
+                <div key={item.id} onClick={() => { setSelectedIndex(idx); setCompareSlider(50); }}
+                  className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all ${stateClass} ${item.status === 'processing' ? 'animate-pulse' : ''}`}
+                >
+                  <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
+                  {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
+                  {item.status === 'processing' && <div className="absolute inset-0 flex items-center justify-center bg-black/90 text-xs font-black text-[#00ff00] z-20">{item.progress}%</div>}
+                </div>
+              );
+            })}
           </div>
         </div>
 
