@@ -199,7 +199,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="relative w-full h-full p-8 flex items-center justify-center">
-                <div className="relative max-h-full shadow-2xl checkerboard-bg overflow-hidden border-2 border-[#00ff00]">
+                <div className="relative max-h-full shadow-2xl bg-checkerboard overflow-hidden border-2 border-[#00ff00]">
                   <img src={selectedItem.processed || selectedItem.original} className={`max-h-[500px] object-contain block ${selectedItem.status === 'processing' ? 'opacity-30 blur-sm' : ''}`} alt="Main View" />
                   
                   {selectedItem.processed && (
