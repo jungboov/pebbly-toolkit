@@ -13,6 +13,8 @@ interface BatchItem {
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress: number;
   fileName: string;
+  startedAt?: number;
+  completedAt?: number;
 }
 
 type UserPlan = 'free' | 'pro' | 'pro_plus';
@@ -60,7 +62,8 @@ export default function Home() {
     const queue: BatchItem[] = [...items];
 
     const processOne = async (item: BatchItem) => {
-      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
+      const startedAt = Date.now();
+      setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing', startedAt } : i));
       try {
         const resultBlob = await removeBackground(item.original, {
           ...config,
@@ -80,8 +83,9 @@ export default function Home() {
           }
         });
         const url = URL.createObjectURL(resultBlob);
+        const completedAt = Date.now();
         lastCompletedIdRef.current = item.id;
-        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100 } : i));
+        setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, processed: url, status: 'completed', progress: 100, completedAt } : i));
         // 첫 item이 끝까지 성공했다면 모델은 확실히 ready
         setModelStatus(prev => prev === 'loading' ? 'ready' : prev);
       } catch (e) {
@@ -203,9 +207,30 @@ export default function Home() {
     }
   };
 
-  const selectedItem = useMemo(() => 
+  const selectedItem = useMemo(() =>
     selectedIndex !== null ? batchItems[selectedIndex] : null
   , [batchItems, selectedIndex]);
+
+  const batchStatus: 'idle' | 'processing' | 'ready' = useMemo(() => {
+    if (batchItems.length === 0) return 'idle';
+    const active = batchItems.some(i => i.status === 'pending' || i.status === 'processing');
+    return active ? 'processing' : 'ready';
+  }, [batchItems]);
+
+  const batchStats = useMemo(() => {
+    const total = batchItems.length;
+    const completed = batchItems.filter(i => i.status === 'completed').length;
+    const timedItems = batchItems.filter(i => i.status === 'completed' && i.startedAt != null && i.completedAt != null);
+    const avgMs = timedItems.length > 0
+      ? timedItems.reduce((sum, i) => sum + (i.completedAt! - i.startedAt!), 0) / timedItems.length
+      : 0;
+    const remaining = batchItems.filter(i => i.status === 'pending' || i.status === 'processing').length;
+    const etaMs = avgMs > 0 ? (avgMs * remaining) / Math.max(concurrency, 1) : 0;
+    return { total, completed, avgMs, etaMs, remaining };
+  }, [batchItems, concurrency]);
+
+  const formatSec = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+  const formatEta = (ms: number) => ms <= 0 ? '—' : `~${Math.ceil(ms / 1000)}s`;
 
   return (
     <main className={`min-h-screen ${t.bg} ${t.font} transition-colors duration-500 antialiased overflow-x-hidden relative`}>
@@ -225,8 +250,15 @@ export default function Home() {
 
       <nav className={`${t.nav} sticky top-0 z-50 backdrop-blur-md px-8 py-3 flex justify-between items-center`}>
         <div className="font-black uppercase tracking-tighter text-[#00ff00]">Pb Toolkit _ Pixel_v1.0</div>
-        <div className="text-[9px] font-bold text-[#00ff00] opacity-50 uppercase tracking-widest">
-          Status: Online // Mode: Background_Removal
+        <div className="flex items-center gap-2 text-[10px] font-black text-[#00ff00] uppercase tracking-[0.25em]">
+          <span className={batchStatus === 'processing' ? 'animate-pulse' : ''}>
+            {batchStatus === 'idle' ? '○' : batchStatus === 'processing' ? '●' : '✓'}
+          </span>
+          <span>
+            {batchStatus === 'idle' && '[IDLE]'}
+            {batchStatus === 'processing' && `[PROCESSING] ${batchStats.completed}/${batchStats.total}`}
+            {batchStatus === 'ready' && `[READY] ${batchStats.completed}/${batchStats.total}`}
+          </span>
         </div>
       </nav>
 
@@ -286,6 +318,9 @@ export default function Home() {
       <div className="max-w-[1400px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12 relative z-10">
         <div className="lg:col-span-8 space-y-10">
           <header>
+            <div className="text-sm font-bold uppercase tracking-[0.5em] text-[#00ff00] opacity-60 mb-2">
+              // PEBBLY
+            </div>
             <h1 className={`text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-none ${t.accent}`}>
               Pixel <br/> Remover
             </h1>
@@ -348,7 +383,7 @@ export default function Home() {
                     : 'border-transparent opacity-40 hover:opacity-100';
               return (
                 <div key={item.id} onClick={() => { setSelectedIndex(idx); setCompareSlider(50); }}
-                  className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all ${stateClass} ${item.status === 'processing' ? 'animate-pulse' : ''}`}
+                  className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all hover:scale-105 ${stateClass} ${item.status === 'processing' ? 'animate-pulse' : ''}`}
                 >
                   <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
                   {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
@@ -360,23 +395,60 @@ export default function Home() {
         </div>
 
         {/* 제어판 */}
-        <div className="lg:col-span-4 lg:pt-48 space-y-6">
-          <div className={`${t.card} p-8 space-y-4 shadow-[10px_10px_0px_#00ff0022]`}>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-6"># Batch_Control_Node</p>
-            <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
-              className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
-              {isDownloading ? ">> Archiving..." : `Download_Results (${batchItems.filter(i => i.status === 'completed').length})`}
-            </button>
-            <button onClick={() => {
-              batchItems.forEach(item => {
-                URL.revokeObjectURL(item.original);
-                if (item.processed) URL.revokeObjectURL(item.processed);
-              });
-              setBatchItems([]);
-              setSelectedIndex(null);
-            }} className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]`}>
-              Clear_Cache
-            </button>
+        <div className="lg:col-span-4 lg:pt-[36px]">
+          <div className={`${t.card} flex flex-col shadow-[10px_10px_0px_#00ff0022]`}>
+            {/* 섹션 1: STATUS */}
+            <div className="p-6">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-4"># SYSTEM_STATUS</p>
+              <div className="flex items-center gap-3">
+                <span className={`text-2xl leading-none text-[#00ff00] ${batchStatus === 'processing' ? 'animate-pulse' : ''}`}>
+                  {batchStatus === 'idle' ? '○' : batchStatus === 'processing' ? '●' : '✓'}
+                </span>
+                <span className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm">
+                  {batchStatus === 'idle' ? 'IDLE' : batchStatus === 'processing' ? 'PROCESSING...' : 'READY'}
+                </span>
+              </div>
+            </div>
+
+            {/* 섹션 2: METRICS (processing일 때만) */}
+            {batchStatus === 'processing' && batchItems.length > 0 && (
+              <div className="p-6 border-t border-[#00ff00]/20">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-4"># BATCH_PROGRESS</p>
+                <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
+                  <div className="flex justify-between">
+                    <span className="opacity-60">Progress:</span>
+                    <span className="font-black">{batchStats.completed}/{batchStats.total}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="opacity-60">ETA:</span>
+                    <span className="font-black">{formatEta(batchStats.etaMs)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="opacity-60">AVG:</span>
+                    <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 섹션 3: ACTIONS */}
+            <div className="p-6 border-t border-[#00ff00]/20 space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># BATCH_CONTROL_NODE</p>
+              <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
+                className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
+                {isDownloading ? ">> Archiving..." : `Download_Results (${batchStats.completed})`}
+              </button>
+              <button onClick={() => {
+                batchItems.forEach(item => {
+                  URL.revokeObjectURL(item.original);
+                  if (item.processed) URL.revokeObjectURL(item.processed);
+                });
+                setBatchItems([]);
+                setSelectedIndex(null);
+              }} className="w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]">
+                Clear_Cache
+              </button>
+            </div>
           </div>
         </div>
       </div>
