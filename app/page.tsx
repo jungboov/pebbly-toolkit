@@ -291,7 +291,8 @@ export default function Home() {
         {/* 메인 뷰어 + 우측 STATUS/CONTROL 카드: 같은 높이로 stretch */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
           {/* 메인 뷰어 (col-span-8, aspect-[16/10]이 row 높이 결정) */}
-          <div className={`lg:col-span-8 ${t.card} relative aspect-[16/10] flex items-center justify-center overflow-hidden rounded-none bg-black/40`}>
+          <div className="lg:col-span-8 min-w-0">
+          <div className="bg-black border-4 border-[#00ff00] relative aspect-[16/10] flex items-center justify-center overflow-hidden rounded-none bg-black/40">
             {!selectedItem ? (
               <div className="text-center cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
                 <div className="w-16 h-16 border-2 border-[#00ff00] flex items-center justify-center mx-auto mb-4 text-2xl font-bold group-hover:bg-[#00ff00] group-hover:text-black transition-all">+</div >
@@ -331,6 +332,7 @@ export default function Home() {
               </div>
             )}
             <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={e => e.target.files && handleFiles(e.target.files)} />
+          </div>
           </div>
 
           {/* 우측: STATUS + CONTROL — 자연 높이 스택 (h-full/flex 연쇄 제거) */}
