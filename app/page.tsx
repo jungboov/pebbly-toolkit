@@ -37,9 +37,14 @@ export default function Home() {
       <DragOverlay isDragging={isDragging} />
 
       <nav className={`${t.nav} sticky top-0 z-50 backdrop-blur-md px-4 py-2 flex justify-between items-center`}>
-        <div className="font-black uppercase tracking-[0.15em] text-[10px] text-[#00ff00] opacity-90">
-          PB TOOLKIT _ PIXEL_V1.0
-        </div>
+        <a
+          href="https://pebblylabs.com"
+          className="font-black uppercase tracking-[0.15em] text-[10px] text-[#00ff00] opacity-70 hover:opacity-100 transition-opacity group flex items-center gap-1.5"
+          title="Back to Pebbly Labs"
+        >
+          <span className="opacity-60 group-hover:opacity-100 group-hover:-translate-x-0.5 transition-all">←</span>
+          <span>PB TOOLKIT _ PIXEL_V1.0</span>
+        </a>
         <div className="flex items-center gap-1.5 text-[9px] font-black text-[#00ff00] uppercase tracking-[0.15em]">
           <span className={batchStatus === 'processing' ? 'animate-pulse' : ''}>
             {batchStatus === 'idle' ? '○' : batchStatus === 'processing' ? '●' : '✓'}
