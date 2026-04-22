@@ -25,7 +25,7 @@ export const PixelGauge = memo(function PixelGauge({
         return (
           <div
             key={idx}
-            className={`flex-1 min-w-0 ${heightClass} transition-all duration-200 ${
+            className={`flex-1 min-w-[4px] ${heightClass} transition-all duration-200 ${
               isFilled
                 ? `bg-[#00ff00]${isCurrent ? ' animate-pulse' : ''}${glow ? ' shadow-[0_0_4px_#00ff00]' : ''}`
                 : 'bg-[#00ff00]/5 border border-[#00ff00]/20'
