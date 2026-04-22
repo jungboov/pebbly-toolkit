@@ -53,38 +53,46 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="max-w-[480px] md:max-w-[680px] mx-auto px-4 md:px-8 py-4 md:py-8 flex flex-col gap-3 md:gap-5">
-        <Hero />
+      <div className="max-w-[480px] md:max-w-[1000px] w-full mx-auto h-[calc(100vh-40px)] px-4 md:px-8 py-3 md:py-5 flex flex-col gap-2 md:gap-3 overflow-hidden">
+        <div className="flex-shrink-0">
+          <Hero />
+        </div>
         <Viewer
           selectedItem={selectedItem}
           compareSlider={compareSlider}
           onCompareChange={setCompareSlider}
           onFileInputClick={() => fileInputRef.current?.click()}
         />
-        <StatusBar
-          modelStatus={modelStatus}
-          modelProgress={modelProgress}
-          batchStatus={batchStatus}
-          batchStats={batchStats}
-          overallPercentage={overallPercentage}
-          onRetryModel={handleRetryModel}
-        />
-        <ThumbnailStrip
-          items={batchItems}
-          selectedIndex={selectedIndex}
-          onSelect={(idx) => {
-            setSelectedIndex(idx);
-            setCompareSlider(50);
-          }}
-          onAdd={() => fileInputRef.current?.click()}
-        />
-        <ControlRow
-          completedCount={batchStats.completed}
-          isDownloading={isDownloading}
-          onDownload={handleDownloadAll}
-          onClear={handleClearCache}
-        />
-        <div className="text-center text-[9px] opacity-40 tracking-[0.25em] font-black text-[#00ff00] mt-2">
+        <div className="flex-shrink-0">
+          <StatusBar
+            modelStatus={modelStatus}
+            modelProgress={modelProgress}
+            batchStatus={batchStatus}
+            batchStats={batchStats}
+            overallPercentage={overallPercentage}
+            onRetryModel={handleRetryModel}
+          />
+        </div>
+        <div className="flex-shrink-0">
+          <ThumbnailStrip
+            items={batchItems}
+            selectedIndex={selectedIndex}
+            onSelect={(idx) => {
+              setSelectedIndex(idx);
+              setCompareSlider(50);
+            }}
+            onAdd={() => fileInputRef.current?.click()}
+          />
+        </div>
+        <div className="flex-shrink-0">
+          <ControlRow
+            completedCount={batchStats.completed}
+            isDownloading={isDownloading}
+            onDownload={handleDownloadAll}
+            onClear={handleClearCache}
+          />
+        </div>
+        <div className="flex-shrink-0 text-center text-[9px] opacity-40 tracking-[0.25em] font-black text-[#00ff00]">
           🔒 100% LOCAL · NO UPLOAD · ZERO SERVER
         </div>
         <input
