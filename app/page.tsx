@@ -30,11 +30,11 @@ export default function Home() {
   // 파일 처리 로직
 const processNextInQueue = async (items: BatchItem[]) => {
   // 'medium' 대신 'isnet' 또는 'isnet_fp16'을 사용하세요.
-  const config = { 
-    model: 'isnet', 
-    device: 'cpu', 
-    numThreads: 1 
-  } as any; // 타입을 강제로 우회합니다.
+  const config: Partial<Config> & { numThreads?: number } = {
+    model: 'isnet',
+    device: 'cpu',
+    numThreads: 1,
+  };
 
   for (const item of items) {
     setBatchItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
@@ -59,7 +59,7 @@ const processNextInQueue = async (items: BatchItem[]) => {
     const startIdx = batchItems.length;
     const filesArray = Array.from(files);
     const newItems: BatchItem[] = filesArray.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       original: URL.createObjectURL(file),
       processed: null,
       status: 'pending',
@@ -227,7 +227,14 @@ const processNextInQueue = async (items: BatchItem[]) => {
               className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
               {isDownloading ? ">> Archiving..." : `Download_Results (${batchItems.filter(i => i.status === 'completed').length})`}
             </button>
-            <button onClick={() => { setBatchItems([]); setSelectedIndex(null); }} className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]`}>
+            <button onClick={() => {
+              batchItems.forEach(item => {
+                URL.revokeObjectURL(item.original);
+                if (item.processed) URL.revokeObjectURL(item.processed);
+              });
+              setBatchItems([]);
+              setSelectedIndex(null);
+            }} className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all opacity-40 hover:opacity-100 border border-[#00ff00] text-[#00ff00]`}>
               Clear_Cache
             </button>
           </div>
