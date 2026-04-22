@@ -220,13 +220,17 @@ export default function Home() {
   const batchStats = useMemo(() => {
     const total = batchItems.length;
     const completed = batchItems.filter(i => i.status === 'completed').length;
+    const active = batchItems.filter(i => i.status === 'processing').length;
     const timedItems = batchItems.filter(i => i.status === 'completed' && i.startedAt != null && i.completedAt != null);
     const avgMs = timedItems.length > 0
       ? timedItems.reduce((sum, i) => sum + (i.completedAt! - i.startedAt!), 0) / timedItems.length
       : 0;
     const remaining = batchItems.filter(i => i.status === 'pending' || i.status === 'processing').length;
     const etaMs = avgMs > 0 ? (avgMs * remaining) / Math.max(concurrency, 1) : 0;
-    return { total, completed, avgMs, etaMs, remaining };
+    const totalTimeMs = timedItems.length > 0
+      ? Math.max(...timedItems.map(i => i.completedAt!)) - Math.min(...timedItems.map(i => i.startedAt!))
+      : 0;
+    return { total, completed, active, avgMs, etaMs, remaining, totalTimeMs };
   }, [batchItems, concurrency]);
 
   const formatSec = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
@@ -262,72 +266,21 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* 모델 로딩 배너 */}
-      <AnimatePresence>
-        {modelStatus === 'loading' && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[90] bg-black border-2 border-[#00ff00] px-6 py-4 font-mono shadow-[0_0_30px_rgba(0,255,0,0.35)] w-[min(92vw,420px)]"
-          >
-            <div className="text-[#00ff00] text-sm font-black uppercase tracking-widest animate-pulse">
-              &gt;&gt; INITIALIZING_AI_ENGINE...
-            </div>
-            <div className="text-[#00ff00] text-[10px] opacity-60 uppercase tracking-widest mt-2">
-              약 43MB 다운로드 중 · 처음 1회만 필요합니다
-            </div>
-            <div className="text-[#00ff00] text-[10px] font-black uppercase tracking-widest mt-2">
-              # 사진은 어디에도 전송되지 않습니다 // 100% LOCAL
-            </div>
-            <div className="mt-3 h-1 bg-[#00ff00]/20 overflow-hidden">
-              <div
-                className="h-full bg-[#00ff00] transition-all duration-300"
-                style={{ width: `${Math.max(modelProgress, 3)}%` }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="max-w-[1400px] mx-auto px-8 py-12 relative z-10">
+        {/* 히어로 타이틀 (grid 바깥, 전체 너비) */}
+        <header className="mb-10">
+          <div className="text-sm font-bold uppercase tracking-[0.5em] text-[#00ff00] opacity-60 mb-2">
+            // PEBBLY
+          </div>
+          <h1 className={`text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-none ${t.accent}`}>
+            Pixel <br/> Remover
+          </h1>
+        </header>
 
-      {/* 모델 로딩 에러 배너 */}
-      <AnimatePresence>
-        {modelStatus === 'error' && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-[72px] left-1/2 -translate-x-1/2 z-[90] bg-black border-2 border-red-500 px-6 py-4 font-mono shadow-[0_0_30px_rgba(239,68,68,0.35)] w-[min(92vw,420px)]"
-          >
-            <div className="text-red-500 text-sm font-black uppercase tracking-widest">
-              !! MODEL_LOAD_FAILED
-            </div>
-            <div className="text-red-400 text-[10px] opacity-80 uppercase tracking-widest mt-2">
-              네트워크 또는 브라우저 캐시 문제일 수 있습니다
-            </div>
-            <button
-              onClick={handleRetryModel}
-              className="mt-3 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] border border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all"
-            >
-              &gt;&gt; Retry
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="max-w-[1400px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12 relative z-10">
-        <div className="lg:col-span-8 space-y-10">
-          <header>
-            <div className="text-sm font-bold uppercase tracking-[0.5em] text-[#00ff00] opacity-60 mb-2">
-              // PEBBLY
-            </div>
-            <h1 className={`text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-none ${t.accent}`}>
-              Pixel <br/> Remover
-            </h1>
-          </header>
-
-          {/* 메인 뷰어 */}
-          <div className={`${t.card} relative aspect-[16/10] flex items-center justify-center overflow-hidden rounded-none bg-black/40`}>
+        {/* 메인 뷰어 + 우측 STATUS/CONTROL 카드: 같은 높이로 stretch */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
+          {/* 메인 뷰어 (col-span-8, aspect-[16/10]이 row 높이 결정) */}
+          <div className={`lg:col-span-8 ${t.card} relative aspect-[16/10] flex items-center justify-center overflow-hidden rounded-none bg-black/40`}>
             {!selectedItem ? (
               <div className="text-center cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
                 <div className="w-16 h-16 border-2 border-[#00ff00] flex items-center justify-center mx-auto mb-4 text-2xl font-bold group-hover:bg-[#00ff00] group-hover:text-black transition-all">+</div >
@@ -369,71 +322,119 @@ export default function Home() {
             <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={e => e.target.files && handleFiles(e.target.files)} />
           </div>
 
-          {/* 썸네일 바 */}
-          <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide">
-            <button onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 w-20 h-20 border-2 border-[#00ff00] opacity-30 hover:opacity-100 flex items-center justify-center text-xl transition-all">+</button>
-            {batchItems.map((item, idx) => {
-              const isSelected = selectedIndex === idx;
-              const stateClass = isSelected
-                ? 'border-[#00ff00] scale-105 shadow-[0_0_15px_#00ff00]'
-                : item.status === 'processing'
-                  ? 'border-[#00ff00]/60 opacity-40 hover:opacity-100'
-                  : item.status === 'completed'
-                    ? 'border-transparent opacity-60 hover:opacity-100 shadow-[0_0_6px_rgba(0,255,0,0.25)]'
-                    : 'border-transparent opacity-40 hover:opacity-100';
-              return (
-                <div key={item.id} onClick={() => { setSelectedIndex(idx); setCompareSlider(50); }}
-                  className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all hover:scale-105 ${stateClass} ${item.status === 'processing' ? 'animate-pulse' : ''}`}
-                >
-                  <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
-                  {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
-                  {item.status === 'processing' && <div className="absolute inset-0 flex items-center justify-center bg-black/90 text-xs font-black text-[#00ff00] z-20">{item.progress}%</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 제어판 */}
-        <div className="lg:col-span-4 lg:pt-[36px]">
-          <div className={`${t.card} flex flex-col shadow-[10px_10px_0px_#00ff0022]`}>
-            {/* 섹션 1: STATUS */}
-            <div className="p-6">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-4"># SYSTEM_STATUS</p>
-              <div className="flex items-center gap-3">
-                <span className={`text-2xl leading-none text-[#00ff00] ${batchStatus === 'processing' ? 'animate-pulse' : ''}`}>
-                  {batchStatus === 'idle' ? '○' : batchStatus === 'processing' ? '●' : '✓'}
-                </span>
-                <span className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm">
-                  {batchStatus === 'idle' ? 'IDLE' : batchStatus === 'processing' ? 'PROCESSING...' : 'READY'}
-                </span>
-              </div>
+          {/* 우측: STATUS(flex-1) + CONTROL(flex-shrink-0) — 뷰어 높이에 맞춰 stretch */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className={`${t.card} p-6 flex-1 flex flex-col shadow-[10px_10px_0px_#00ff0022]`}>
+              {modelStatus === 'loading' ? (
+                <>
+                  <div>
+                    <div className="text-2xl text-[#00ff00] animate-pulse leading-none">⋯</div>
+                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">INITIALIZING</div>
+                  </div>
+                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># AI_ENGINE</p>
+                    <div className="text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em] opacity-80">AI Engine 준비 중</div>
+                    <div className="text-[#00ff00] text-[10px] opacity-60 mt-1">43MB 다운로드 · 처음 1회만</div>
+                    <div className="mt-3 h-1 bg-[#00ff00]/20 overflow-hidden">
+                      <div className="h-full bg-[#00ff00] transition-all duration-300" style={{ width: `${Math.max(modelProgress, 3)}%` }} />
+                    </div>
+                  </div>
+                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
+                    <div className="text-[#00ff00] text-[10px] opacity-60">100% 브라우저 처리 · 유출 없음</div>
+                  </div>
+                </>
+              ) : modelStatus === 'error' ? (
+                <>
+                  <div>
+                    <div className="text-2xl text-red-500 leading-none">!!</div>
+                    <div className="font-black uppercase tracking-[0.3em] text-red-500 text-sm mt-2">MODEL_ERROR</div>
+                  </div>
+                  <div className="mt-6 border-t border-red-500/30 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-red-500 opacity-70 mb-3"># DETAILS</p>
+                    <div className="text-red-400 text-[10px] opacity-80 uppercase tracking-widest leading-relaxed">네트워크 또는 브라우저 캐시 문제일 수 있습니다</div>
+                    <button onClick={handleRetryModel}
+                      className="mt-4 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] border border-red-500 text-red-500 hover:bg-red-500 hover:text-black transition-all">
+                      &gt;&gt; Retry
+                    </button>
+                  </div>
+                </>
+              ) : batchStatus === 'idle' ? (
+                <>
+                  <div>
+                    <div className="text-2xl text-[#00ff00] leading-none">○</div>
+                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">IDLE</div>
+                  </div>
+                  <div className="mt-3 text-[#00ff00] text-[11px] opacity-60 uppercase tracking-widest">
+                    대기 중 · 이미지를 드롭하세요
+                  </div>
+                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
+                    <div className="text-[#00ff00] text-[10px] opacity-60 leading-relaxed">
+                      이미지는 브라우저에서만 처리되며, 외부로 전송되지 않습니다.
+                    </div>
+                  </div>
+                </>
+              ) : batchStatus === 'processing' ? (
+                <>
+                  <div>
+                    <div className="text-2xl text-[#00ff00] animate-pulse leading-none">●</div>
+                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">PROCESSING</div>
+                    <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
+                      {batchStats.completed}/{batchStats.total} COMPLETE · {batchStats.active} ACTIVE
+                    </div>
+                  </div>
+                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># METRICS</p>
+                    <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
+                      <div className="flex justify-between">
+                        <span className="opacity-60">ETA:</span>
+                        <span className="font-black">{formatEta(batchStats.etaMs)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="opacity-60">AVG:</span>
+                        <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># FULLY_LOCAL</p>
+                    <div className="text-[#00ff00] text-[10px] opacity-60">유출 없음 · 100% 로컬</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <div className="text-2xl text-[#00ff00] leading-none">✓</div>
+                    <div className="font-black uppercase tracking-[0.3em] text-[#00ff00] text-sm mt-2">READY</div>
+                    <div className="text-[#00ff00] text-[11px] font-mono mt-2 opacity-80 uppercase tracking-[0.15em]">
+                      {batchStats.completed}/{batchStats.total} COMPLETE
+                    </div>
+                  </div>
+                  <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># SUMMARY</p>
+                    <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
+                      <div className="flex justify-between">
+                        <span className="opacity-60">TOTAL_TIME:</span>
+                        <span className="font-black">{batchStats.totalTimeMs > 0 ? formatSec(batchStats.totalTimeMs) : '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="opacity-60">AVG:</span>
+                        <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto border-t border-[#00ff00]/20 pt-4">
+                    <div className="text-[#00ff00] text-[10px] font-black uppercase tracking-[0.25em] text-right opacity-80 animate-pulse">
+                      ↓ DOWNLOAD_READY
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* 섹션 2: METRICS (processing일 때만) */}
-            {batchStatus === 'processing' && batchItems.length > 0 && (
-              <div className="p-6 border-t border-[#00ff00]/20">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-4"># BATCH_PROGRESS</p>
-                <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
-                  <div className="flex justify-between">
-                    <span className="opacity-60">Progress:</span>
-                    <span className="font-black">{batchStats.completed}/{batchStats.total}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="opacity-60">ETA:</span>
-                    <span className="font-black">{formatEta(batchStats.etaMs)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="opacity-60">AVG:</span>
-                    <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 섹션 3: ACTIONS */}
-            <div className="p-6 border-t border-[#00ff00]/20 space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># BATCH_CONTROL_NODE</p>
+            <div className={`${t.card} p-6 space-y-3 flex-shrink-0 shadow-[10px_10px_0px_#00ff0022]`}>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># CONTROL</p>
               <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
                 className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
                 {isDownloading ? ">> Archiving..." : `Download_Results (${batchStats.completed})`}
@@ -450,6 +451,30 @@ export default function Home() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* 썸네일 바 (grid 바깥, 메인 영역 아래) */}
+        <div className="mt-6 flex gap-4 overflow-x-auto py-2 scrollbar-hide">
+          <button onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 w-20 h-20 border-2 border-[#00ff00] opacity-30 hover:opacity-100 flex items-center justify-center text-xl transition-all">+</button>
+          {batchItems.map((item, idx) => {
+            const isSelected = selectedIndex === idx;
+            const stateClass = isSelected
+              ? 'border-[#00ff00] scale-105 shadow-[0_0_15px_#00ff00]'
+              : item.status === 'processing'
+                ? 'border-[#00ff00]/60 opacity-40 hover:opacity-100'
+                : item.status === 'completed'
+                  ? 'border-transparent opacity-60 hover:opacity-100 shadow-[0_0_6px_rgba(0,255,0,0.25)]'
+                  : 'border-transparent opacity-40 hover:opacity-100';
+            return (
+              <div key={item.id} onClick={() => { setSelectedIndex(idx); setCompareSlider(50); }}
+                className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 cursor-pointer relative transition-all hover:scale-105 ${stateClass} ${item.status === 'processing' ? 'animate-pulse' : ''}`}
+              >
+                <img src={item.original} className={`w-full h-full object-cover pointer-events-none ${item.status === 'pending' ? 'grayscale opacity-30' : ''}`} alt="Thumbnail" />
+                {item.status === 'completed' && <div className="absolute top-1 right-1 w-4 h-4 bg-[#00ff00] text-black font-bold flex items-center justify-center text-[8px] z-10 shadow-md">OK</div>}
+                {item.status === 'processing' && <div className="absolute inset-0 flex items-center justify-center bg-black/90 text-xs font-black text-[#00ff00] z-20">{item.progress}%</div>}
+              </div>
+            );
+          })}
         </div>
       </div>
     </main>
