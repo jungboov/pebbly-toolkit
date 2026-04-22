@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="max-w-[480px] md:max-w-[560px] mx-auto px-4 py-4 md:py-6 flex flex-col gap-3 md:gap-4">
+      <div className="max-w-[480px] md:max-w-[900px] mx-auto px-4 md:px-8 py-4 md:py-8 flex flex-col gap-3 md:gap-5">
         <Hero />
         <Viewer
           selectedItem={selectedItem}
