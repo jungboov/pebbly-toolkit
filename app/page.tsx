@@ -334,8 +334,8 @@ export default function Home() {
           </div>
 
           {/* 우측: STATUS(flex-1) + CONTROL(flex-shrink-0) — 뷰어 높이에 맞춰 stretch */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className={`${t.card} p-6 flex-1 flex flex-col shadow-[10px_10px_0px_#00ff0022]`}>
+          <div className="lg:col-span-4 flex flex-col gap-6 min-w-0">
+            <div className={`${t.card} p-6 flex-1 flex flex-col w-full min-w-0 overflow-hidden shadow-[10px_10px_0px_#00ff0022]`}>
               {modelStatus === 'loading' ? (
                 <>
                   <div>
@@ -398,35 +398,35 @@ export default function Home() {
                   <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># METRICS</p>
                     <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
-                      <div className="flex justify-between">
-                        <span className="opacity-60">ETA:</span>
-                        <span className="font-black">{formatEta(batchStats.etaMs)}</span>
+                      <div className="flex justify-between min-w-0 gap-2">
+                        <span className="opacity-60 truncate min-w-0">ETA:</span>
+                        <span className="font-black flex-shrink-0 whitespace-nowrap">{formatEta(batchStats.etaMs)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="opacity-60">AVG:</span>
-                        <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                      <div className="flex justify-between min-w-0 gap-2">
+                        <span className="opacity-60 truncate min-w-0">AVG:</span>
+                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
                       </div>
                     </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
-                        <span>OVERALL</span>
-                        <span>{overallPercentage}%</span>
+                    <div className="mt-4 space-y-2 min-w-0">
+                      <div className="flex justify-between min-w-0 gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                        <span className="truncate min-w-0">OVERALL</span>
+                        <span className="flex-shrink-0 whitespace-nowrap">{overallPercentage}%</span>
                       </div>
                       <PixelGauge value={overallPercentage} blocks={10} height="md" glow />
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60 truncate">
                         {batchStats.completed} / {batchStats.total} PROCESSED
                       </div>
                     </div>
                   </div>
                   {selectedItem && selectedItem.status === 'processing' && (
-                    <div className="mt-4 pt-3 border-t border-[#00ff00]/20 space-y-2">
+                    <div className="mt-4 pt-3 border-t border-[#00ff00]/20 space-y-2 min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50"># ACTIVE</p>
-                      <div className="text-[11px] font-mono text-[#00ff00]/80 truncate">
+                      <div className="text-[11px] font-mono text-[#00ff00]/80 truncate min-w-0">
                         {selectedItem.fileName}
                       </div>
-                      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
-                        <span>CURRENT</span>
-                        <span>{selectedItem.progress}%</span>
+                      <div className="flex justify-between min-w-0 gap-2 text-[10px] font-mono uppercase tracking-widest text-[#00ff00]/60">
+                        <span className="truncate min-w-0">CURRENT</span>
+                        <span className="flex-shrink-0 whitespace-nowrap">{selectedItem.progress}%</span>
                       </div>
                       <PixelGauge value={selectedItem.progress} blocks={10} height="md" glow />
                     </div>
@@ -448,13 +448,13 @@ export default function Home() {
                   <div className="mt-6 border-t border-[#00ff00]/20 pt-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-3"># SUMMARY</p>
                     <div className="space-y-1.5 text-[#00ff00] text-[11px] font-mono uppercase tracking-[0.15em]">
-                      <div className="flex justify-between">
-                        <span className="opacity-60">TOTAL_TIME:</span>
-                        <span className="font-black">{batchStats.totalTimeMs > 0 ? formatSec(batchStats.totalTimeMs) : '—'}</span>
+                      <div className="flex justify-between min-w-0 gap-2">
+                        <span className="opacity-60 truncate min-w-0">TOTAL_TIME:</span>
+                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.totalTimeMs > 0 ? formatSec(batchStats.totalTimeMs) : '—'}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="opacity-60">AVG:</span>
-                        <span className="font-black">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
+                      <div className="flex justify-between min-w-0 gap-2">
+                        <span className="opacity-60 truncate min-w-0">AVG:</span>
+                        <span className="font-black flex-shrink-0 whitespace-nowrap">{batchStats.avgMs > 0 ? `${formatSec(batchStats.avgMs)} / img` : '—'}</span>
                       </div>
                     </div>
                   </div>
@@ -467,7 +467,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className={`${t.card} p-6 space-y-3 flex-shrink-0 shadow-[10px_10px_0px_#00ff0022]`}>
+            <div className={`${t.card} p-6 space-y-3 flex-shrink-0 w-full min-w-0 shadow-[10px_10px_0px_#00ff0022]`}>
               <p className="text-[10px] font-black uppercase tracking-widest text-[#00ff00] opacity-50 mb-2"># CONTROL</p>
               <button onClick={handleDownloadAll} disabled={isDownloading || !batchItems.some(i => i.status === 'completed')}
                 className={`w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 ${t.buttonPrimary}`}>
