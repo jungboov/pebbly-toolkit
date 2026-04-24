@@ -1,4 +1,5 @@
 import type { BatchItem } from '../hooks/useBatchProcessor';
+import { BotLoader } from './BotLoader';
 
 interface ViewerProps {
   selectedItem: BatchItem | null;
@@ -52,8 +53,10 @@ export function Viewer({ selectedItem, compareSlider, onCompareChange, onFileInp
             )}
 
             {selectedItem.status === 'processing' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-40">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 z-40">
+                <BotLoader size={80} />
                 <span className="text-5xl font-black italic tracking-tight text-[#00ff00] animate-pulse">{selectedItem.progress}%</span>
+                <div className="text-[#00ff00] text-[10px] tracking-[0.3em] font-black opacity-80">PROCESSING...</div>
               </div>
             )}
           </div>

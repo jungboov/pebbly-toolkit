@@ -36,4 +36,13 @@ body {
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
   }
+
+  .animate-bounce-gentle {
+    animation: bounce-gentle 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
