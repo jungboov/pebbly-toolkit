@@ -39,10 +39,12 @@ export default function Home() {
       <nav className={`${t.nav} sticky top-0 z-50 backdrop-blur-md px-4 py-2 flex justify-between items-center`}>
         <a
           href="https://pebblylabs.com"
-          className="font-black uppercase tracking-[0.15em] text-[10px] text-[#00ff00] opacity-70 hover:opacity-100 transition-opacity group flex items-center gap-1.5"
+          className="group inline-flex items-center gap-1.5 font-black uppercase tracking-[0.15em] text-[10px] text-[#00ff00] opacity-70 hover:opacity-100 transition-opacity"
           title="Back to Pebbly Labs"
         >
-          <span className="opacity-60 group-hover:opacity-100 group-hover:-translate-x-0.5 transition-all">←</span>
+          <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+            ←
+          </span>
           <span>PB TOOLKIT _ PIXEL_V1.0</span>
         </a>
         <div className="flex items-center gap-1.5 text-[9px] font-black text-[#00ff00] uppercase tracking-[0.15em]">
