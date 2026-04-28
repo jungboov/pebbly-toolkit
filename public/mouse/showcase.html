@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pebbly Pixel Mouse · Interactive Showcase</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #0a0a0a; min-height: 100vh; font-family: 'JetBrains Mono', monospace; color: #e0e0e0; overflow-x: hidden; }
+
+/* TOP NAV */
+.top-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(10,10,10,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,255,0,0.2); padding: 12px 24px; }
+.nav-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.nav-logo { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 0.2em; font-weight: 900; color: #00ff00; }
+.nav-logo svg { width: 28px; height: 28px; image-rendering: pixelated; }
+.section-jumper { display: flex; gap: 6px; }
+.jumper-btn { background: transparent; border: 1px solid rgba(0,255,0,0.3); color: rgba(0,255,0,0.7); width: 32px; height: 32px; cursor: pointer; font-family: monospace; font-size: 10px; font-weight: 900; transition: all 0.2s; }
+.jumper-btn:hover, .jumper-btn.active { background: #00ff00; color: #000; border-color: #00ff00; }
+.controls-info { font-size: 9px; color: rgba(0,255,0,0.5); letter-spacing: 0.15em; display: flex; gap: 12px; }
+.controls-info kbd { background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); padding: 2px 6px; }
+
+/* STAGE */
+.stage { position: relative; height: calc(100vh - 56px); margin-top: 56px; overflow: hidden; }
+.scene { position: absolute; inset: 0; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; padding: 40px; }
+.scene.active { opacity: 1; pointer-events: auto; }
+.scene-content { max-width: 1100px; width: 100%; }
+
+/* BOT GUIDE */
+.bot-guide { position: fixed; width: 80px; height: 80px; z-index: 100; cursor: grab; transition: left 1.2s ease, top 1.2s ease; filter: drop-shadow(0 4px 12px rgba(0,255,0,0.4)); }
+.bot-guide:active { cursor: grabbing; }
+.bot-guide.facing-left .bot-guide-inner { transform: scaleX(-1); }
+.bot-guide-inner { width: 100%; height: 100%; position: relative; }
+.bot-frame { position: absolute; inset: 0; opacity: 0; }
+.bot-frame svg { width: 100%; height: 100%; image-rendering: pixelated; }
+
+.bot-guide.walking .bot-frame.f1 { animation: showFr1 0.6s steps(1) infinite; }
+.bot-guide.walking .bot-frame.f2 { animation: showFr2 0.6s steps(1) infinite; }
+.bot-guide.walking .bot-frame.f3 { animation: showFr3 0.6s steps(1) infinite; }
+.bot-guide.walking .bot-frame.f4 { animation: showFr4 0.6s steps(1) infinite; }
+.bot-guide.idle .bot-frame.f1 { opacity: 1; }
+
+@keyframes showFr1 { 0%, 24.99% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes showFr2 { 0%, 24.99% { opacity: 0; } 25%, 49.99% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes showFr3 { 0%, 49.99% { opacity: 0; } 50%, 74.99% { opacity: 1; } 75%, 100% { opacity: 0; } }
+@keyframes showFr4 { 0%, 74.99% { opacity: 0; } 75%, 100% { opacity: 1; } }
+
+.bot-speech { position: fixed; z-index: 101; pointer-events: none; transition: left 1.2s ease, top 1.2s ease, opacity 0.3s; background: #0a0a0a; border: 2px solid #00ff00; padding: 8px 14px; font-size: 11px; color: #00ff00; letter-spacing: 0.05em; font-weight: 900; max-width: 280px; text-align: center; }
+.bot-speech::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 8px solid transparent; border-top-color: #00ff00; }
+.bot-speech.hidden { opacity: 0; }
+
+/* SCENES */
+.scene-pretitle { font-size: 11px; letter-spacing: 0.3em; color: rgba(0,255,0,0.5); margin-bottom: 12px; text-align: center; }
+.scene-title { font-family: 'Press Start 2P', monospace; font-size: 24px; color: #00ff00; margin-bottom: 16px; line-height: 1.5; text-align: center; }
+.scene-desc { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 30px; line-height: 1.7; text-align: center; }
+
+/* SCENE 1 WELCOME */
+.welcome-title { font-family: 'Press Start 2P', monospace; font-size: 36px; color: #00ff00; margin-bottom: 24px; text-align: center; line-height: 1.5; }
+.welcome-subtitle { font-size: 14px; color: rgba(255,255,255,0.85); margin-bottom: 40px; line-height: 1.7; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center; }
+.start-button { display: inline-flex; align-items: center; gap: 12px; padding: 16px 32px; background: transparent; border: 2px solid #00ff00; color: #00ff00; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 900; letter-spacing: 0.2em; cursor: pointer; transition: all 0.2s; }
+.start-button:hover { background: #00ff00; color: #000; box-shadow: 0 0 30px rgba(0,255,0,0.5); }
+.scene-welcome { text-align: center; }
+
+/* SCENE 2 WALKING */
+.desktop-stage { background: linear-gradient(135deg, #2c2c4a, #1a1a2e); border: 2px solid rgba(0,255,0,0.2); position: relative; height: 400px; overflow: hidden; }
+.desk-icon { position: absolute; width: 60px; text-align: center; }
+.desk-icon-img { width: 44px; height: 44px; margin: 0 auto 4px; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.desk-icon-label { font-size: 9px; color: white; text-shadow: 1px 1px 2px black; }
+.fake-taskbar { position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.1); }
+.demo-walking-bot { position: absolute; bottom: 36px; width: 96px; height: 96px; z-index: 10; animation: walkAcross 16s linear infinite; }
+@keyframes walkAcross { 0% { left: -100px; } 48% { left: calc(100% - 96px); } 50%, 98% { left: calc(100% - 96px); } 98% { left: -100px; } 100% { left: -100px; } }
+.demo-walking-bot .bot-direction { width: 100%; height: 100%; position: relative; animation: flipDir 16s steps(1) infinite, walkBob 0.5s ease-in-out infinite; }
+@keyframes flipDir { 0%, 49.9% { transform: scaleX(1); } 50%, 100% { transform: scaleX(-1); } }
+@keyframes walkBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+.demo-walking-bot .bot-frame.f1 { animation: showFr1 0.6s steps(1) infinite; }
+.demo-walking-bot .bot-frame.f2 { animation: showFr2 0.6s steps(1) infinite; }
+.demo-walking-bot .bot-frame.f3 { animation: showFr3 0.6s steps(1) infinite; }
+.demo-walking-bot .bot-frame.f4 { animation: showFr4 0.6s steps(1) infinite; }
+
+/* SCENE 3 EMOTIONS */
+.emotion-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-height: 70vh; overflow-y: auto; }
+.emotion-card { background: linear-gradient(135deg, #2c2c4a, #1a1a2e); border: 1px solid rgba(0,255,0,0.2); padding: 24px 16px; text-align: center; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.emotion-card:hover { border-color: #00ff00; transform: translateY(-4px); }
+.emotion-bot { width: 60px; height: 60px; margin-bottom: 12px; position: relative; z-index: 2; }
+.emotion-bot svg { width: 100%; height: 100%; image-rendering: pixelated; }
+.emotion-label { font-size: 10px; color: #00ff00; letter-spacing: 0.2em; font-weight: 900; margin-bottom: 4px; }
+.emotion-desc { font-size: 9px; color: rgba(255,255,255,0.6); }
+
+.anim-walk svg { animation: walkAnim 0.8s ease-in-out infinite; }
+@keyframes walkAnim { 0%, 100% { transform: translateY(0) translateX(0); } 25% { transform: translateY(-3px) translateX(3px); } 75% { transform: translateY(-3px) translateX(-3px); } }
+.anim-run svg { animation: runAnim 0.3s ease-in-out infinite; }
+@keyframes runAnim { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+.anim-fly svg { animation: flyAnim 2s ease-in-out infinite; }
+@keyframes flyAnim { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-12px); } 75% { transform: translateY(-15px); } }
+.anim-sleep svg { animation: sleepBreathe 3s ease-in-out infinite; }
+@keyframes sleepBreathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.95) translateY(2px); } }
+.zzz { position: absolute; font-size: 12px; color: #00ff00; font-weight: 900; }
+.zzz-1 { top: 25%; right: 25%; animation: zzzFade 2s ease-out infinite; }
+.zzz-2 { top: 18%; right: 30%; font-size: 10px; animation: zzzFade 2s ease-out 0.5s infinite; }
+@keyframes zzzFade { 0% { opacity: 0; transform: translateY(0); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateY(-30px); } }
+.anim-jump svg { animation: jumpAnim 1s ease-in-out infinite; }
+@keyframes jumpAnim { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-25px) scaleY(1.1); } }
+.anim-spin svg { animation: spinAnim 2s linear infinite; }
+@keyframes spinAnim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.anim-wave svg { animation: waveAnim 1.5s ease-in-out infinite; }
+@keyframes waveAnim { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+.anim-confused svg { animation: confusedShake 0.4s ease-in-out infinite; }
+@keyframes confusedShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px) rotate(-3deg); } 75% { transform: translateX(2px) rotate(3deg); } }
+.confused-marks { position: absolute; top: 5%; width: 100%; text-align: center; font-size: 14px; color: #ffaa00; font-weight: 900; animation: confFloat 1s ease-in-out infinite; }
+@keyframes confFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.anim-celebrate svg { animation: celebBounce 0.5s ease-in-out infinite; }
+@keyframes celebBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px) rotate(10deg); } }
+.confetti { position: absolute; width: 5px; height: 5px; }
+.conf-1 { top: 30%; left: 25%; background: #ff0000; animation: confFall 1s linear infinite; }
+.conf-2 { top: 25%; left: 60%; background: #ffff00; animation: confFall 1.2s linear infinite; }
+.conf-3 { top: 35%; right: 25%; background: #00aaff; animation: confFall 0.8s linear infinite; }
+@keyframes confFall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(60px) rotate(360deg); opacity: 0; } }
+.anim-angry svg { animation: angryShake 0.15s ease-in-out infinite; }
+@keyframes angryShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.steam { position: absolute; top: 5%; font-size: 12px; animation: steamRise 1s ease-out infinite; }
+.steam-1 { left: 30%; }
+.steam-2 { right: 30%; animation-delay: 0.5s; }
+@keyframes steamRise { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateY(-25px) scale(1.5); } }
+.anim-peek svg { animation: peekAnim 4s ease-in-out infinite; }
+@keyframes peekAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.anim-typing svg { animation: typingAnim 0.6s ease-in-out infinite; }
+@keyframes typingAnim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+/* Walking 4-frame in emotion card */
+.emotion-walk-frames { position: relative; }
+.emotion-walk-frames .bot-frame.f1 { animation: showFr1 0.6s steps(1) infinite; }
+.emotion-walk-frames .bot-frame.f2 { animation: showFr2 0.6s steps(1) infinite; }
+.emotion-walk-frames .bot-frame.f3 { animation: showFr3 0.6s steps(1) infinite; }
+.emotion-walk-frames .bot-frame.f4 { animation: showFr4 0.6s steps(1) infinite; }
+
+/* SCENE 4 APPS */
+.app-screens-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-height: 70vh; overflow-y: auto; }
+.mini-app-window { background: #0a0a0a; border: 1px solid rgba(0,255,0,0.3); transition: all 0.2s; overflow: hidden; }
+.mini-app-window:hover { border-color: #00ff00; }
+.mini-titlebar { background: #050505; padding: 8px 12px; border-bottom: 1px solid rgba(0,255,0,0.2); display: flex; align-items: center; font-size: 9px; color: rgba(0,255,0,0.7); letter-spacing: 0.1em; font-weight: 900; }
+.mini-win-controls { margin-left: auto; font-family: monospace; font-size: 11px; color: rgba(0,255,0,0.5); letter-spacing: 4px; }
+.mini-body { padding: 16px; background: #0d0d0d; height: 200px; position: relative; font-size: 10px; }
+.scene-label-overlay { position: absolute; top: 8px; right: 8px; background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); padding: 2px 8px; font-size: 8px; color: #00ff00; letter-spacing: 0.15em; font-weight: 900; z-index: 10; }
+.mini-body-dashboard { display: flex; gap: 12px; height: 100%; }
+.mini-sidebar { width: 70px; background: #050505; padding: 8px; border-right: 1px solid rgba(0,255,0,0.1); }
+.mini-sidebar-item { font-size: 8px; color: rgba(255,255,255,0.6); padding: 4px; margin-bottom: 4px; letter-spacing: 0.1em; }
+.mini-sidebar-item.active { color: #00ff00; background: rgba(0,255,0,0.1); }
+.mini-content { flex: 1; padding-top: 8px; }
+.mini-macro { background: rgba(0,255,0,0.05); border: 1px solid rgba(0,255,0,0.2); padding: 6px 8px; margin-bottom: 4px; font-size: 8px; color: #fff; display: flex; justify-content: space-between; }
+.mini-macro.running { border-color: #00ff00; background: rgba(0,255,0,0.1); }
+.mini-recording { background: linear-gradient(135deg, #2a0000, #1a0000); border: 2px solid #ff4444; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.mini-rec-bot { width: 40px; height: 40px; margin-bottom: 8px; animation: recPulse 1s infinite; }
+@keyframes recPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); opacity: 0.7; } }
+.mini-rec-bot svg { width: 100%; height: 100%; image-rendering: pixelated; }
+.mini-rec-text { color: #ff4444; font-size: 12px; font-family: 'Press Start 2P', monospace; margin-bottom: 4px; }
+.mini-rec-time { color: white; font-size: 10px; letter-spacing: 0.2em; }
+.mini-settings-list { font-size: 8px; }
+.mini-setting-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,255,0,0.1); color: rgba(255,255,255,0.7); align-items: center; }
+.mini-toggle { width: 24px; height: 12px; background: rgba(0,255,0,0.2); border: 1px solid #00ff00; border-radius: 6px; position: relative; }
+.mini-toggle::after { content: ''; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; background: #00ff00; border-radius: 50%; }
+.mini-toggle.off { background: rgba(100,100,100,0.2); border-color: rgba(100,100,100,0.5); }
+.mini-toggle.off::after { left: 1px; right: auto; background: #555; }
+
+/* SCENE 5 WIDGET */
+.widget-stage { background: linear-gradient(135deg, #2c2c4a, #1a1a2e); border: 2px solid rgba(0,255,0,0.2); position: relative; height: 450px; overflow: hidden; }
+.demo-widget-bot { position: absolute; width: 40px; height: 40px; z-index: 5; }
+.demo-widget-bot svg { width: 100%; height: 100%; image-rendering: pixelated; }
+.expanded-menu { position: absolute; background: #0a0a0a; border: 2px solid #00ff00; min-width: 200px; z-index: 6; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+.menu-header { background: #050505; padding: 8px 12px; border-bottom: 1px solid rgba(0,255,0,0.2); font-size: 9px; color: #00ff00; letter-spacing: 0.15em; font-weight: 900; display: flex; justify-content: space-between; }
+.menu-status { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; background: #00ff00; border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.menu-info { padding: 8px 12px; font-size: 9px; color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(0,255,0,0.1); line-height: 1.6; }
+.menu-info strong { color: #00ff00; }
+.menu-actions { display: flex; padding: 8px; gap: 4px; }
+.menu-btn { flex: 1; background: transparent; border: 1px solid rgba(0,255,0,0.3); color: #00ff00; padding: 4px; cursor: pointer; font-size: 11px; }
+.menu-btn:hover { background: rgba(0,255,0,0.1); }
+.menu-btn.danger { border-color: rgba(255,68,68,0.4); color: #ff4444; }
+.menu-list { max-height: 120px; overflow-y: auto; }
+.menu-item-mini { padding: 6px 12px; font-size: 9px; color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(0,255,0,0.05); display: flex; justify-content: space-between; cursor: pointer; }
+.menu-item-mini:hover { background: rgba(0,255,0,0.05); color: #00ff00; }
+.menu-shortcut { color: rgba(0,255,0,0.4); }
+.widget-instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(0,255,0,0.7); letter-spacing: 0.15em; background: rgba(0,0,0,0.6); padding: 8px 16px; border: 1px solid rgba(0,255,0,0.3); }
+
+/* SCENE 6 FINALE */
+.scene-finale { text-align: center; }
+.finale-title { font-family: 'Press Start 2P', monospace; font-size: 28px; color: #00ff00; margin-bottom: 24px; line-height: 1.5; }
+.finale-detail { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.7; max-width: 600px; margin: 0 auto 30px; }
+.finale-detail strong { color: #00ff00; }
+.finale-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; margin: 30px auto; }
+.stat-card { background: rgba(0,255,0,0.05); border: 1px solid rgba(0,255,0,0.3); padding: 16px; text-align: center; }
+.stat-num { font-family: 'Press Start 2P', monospace; font-size: 18px; color: #00ff00; margin-bottom: 8px; }
+.stat-label { font-size: 9px; color: rgba(255,255,255,0.6); letter-spacing: 0.2em; }
+.finale-cta { display: inline-flex; gap: 12px; padding: 16px 32px; background: #00ff00; border: 2px solid #00ff00; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 900; letter-spacing: 0.2em; cursor: pointer; transition: all 0.2s; text-decoration: none; align-items: center; }
+.finale-cta:hover { background: #00cc00; transform: translateY(-2px); }
+
+@media (max-width: 768px) {
+  .controls-info { display: none; }
+  .emotion-grid { grid-template-columns: repeat(2, 1fr); }
+  .app-screens-grid { grid-template-columns: 1fr; }
+}
+
+/* App screen modal */
+.app-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 40px; cursor: pointer; }
+.app-modal.active { display: flex; }
+.app-modal-window { max-width: 900px; width: 100%; max-height: 90vh; background: #0a0a0a; border: 2px solid #00ff00; box-shadow: 0 20px 80px rgba(0, 255, 0, 0.3); cursor: default; transform: scale(0.9); transition: transform 0.3s; overflow: hidden; }
+.app-modal.active .app-modal-window { transform: scale(1); }
+.app-modal-titlebar { background: #050505; padding: 12px 16px; border-bottom: 1px solid rgba(0,255,0,0.3); display: flex; align-items: center; font-size: 11px; color: #00ff00; letter-spacing: 0.15em; font-weight: 900; }
+.app-modal-close { margin-left: auto; background: transparent; border: 1px solid rgba(0,255,0,0.4); color: #00ff00; padding: 4px 12px; cursor: pointer; font-family: monospace; font-size: 12px; font-weight: 900; }
+.app-modal-close:hover { background: #00ff00; color: #000; }
+.app-modal-body { padding: 32px; min-height: 500px; max-height: calc(90vh - 60px); overflow-y: auto; background: #0d0d0d; }
+.mini-app-window { cursor: pointer; }
+.click-hint { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: #00ff00; padding: 2px 8px; font-size: 8px; letter-spacing: 0.15em; border: 1px solid rgba(0,255,0,0.3); z-index: 10; opacity: 0; transition: opacity 0.2s; }
+.mini-app-window:hover .click-hint { opacity: 1; }
+
+/* Expanded views inside modal */
+.modal-dashboard { display: grid; grid-template-columns: 220px 1fr; gap: 0; min-height: 450px; }
+.modal-sidebar { background: #050505; padding: 20px; border-right: 1px solid rgba(0,255,0,0.2); }
+.modal-sidebar-section { margin-bottom: 24px; }
+.modal-sidebar-label { font-size: 9px; color: rgba(0,255,0,0.4); letter-spacing: 0.25em; margin-bottom: 12px; }
+.modal-sidebar-item { padding: 10px 12px; font-size: 11px; color: rgba(255,255,255,0.7); cursor: pointer; letter-spacing: 0.1em; border-left: 3px solid transparent; }
+.modal-sidebar-item.active { background: rgba(0,255,0,0.1); color: #00ff00; border-left-color: #00ff00; }
+.modal-content { padding: 20px; }
+.modal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.modal-stat { background: #0d0d0d; border: 1px solid rgba(0,255,0,0.2); padding: 12px; text-align: center; }
+.modal-stat-num { font-family: 'Press Start 2P', monospace; font-size: 14px; color: #00ff00; margin-bottom: 6px; }
+.modal-stat-label { font-size: 8px; color: rgba(255,255,255,0.5); letter-spacing: 0.2em; }
+.modal-macro-item { background: #0d0d0d; border: 1px solid rgba(0,255,0,0.15); padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; font-size: 11px; }
+.modal-macro-item.running { border-color: #00ff00; background: rgba(0,255,0,0.05); }
+.modal-macro-item .icon { width: 28px; height: 28px; background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.modal-macro-item .info { flex: 1; }
+.modal-macro-item .name { color: #fff; font-weight: 900; margin-bottom: 2px; }
+.modal-macro-item .meta { font-size: 9px; color: rgba(255,255,255,0.5); letter-spacing: 0.05em; }
+
+.modal-recording { background: linear-gradient(135deg, #2a0000, #1a0000); border: 4px solid #ff4444; padding: 50px; text-align: center; }
+.modal-rec-bot { width: 100px; height: 100px; margin: 0 auto 20px; animation: recPulse 1s infinite; }
+.modal-rec-title { font-family: 'Press Start 2P', monospace; font-size: 24px; color: #ff4444; margin-bottom: 16px; }
+.modal-rec-time { font-family: 'Press Start 2P', monospace; font-size: 28px; color: white; margin-bottom: 24px; letter-spacing: 0.1em; }
+.modal-rec-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 500px; margin: 0 auto 30px; }
+.modal-rec-stat { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,68,68,0.4); padding: 12px; }
+.modal-rec-stat-num { font-size: 16px; color: #ff4444; font-weight: 900; }
+.modal-rec-stat-label { font-size: 8px; color: rgba(255,255,255,0.6); letter-spacing: 0.2em; margin-top: 4px; }
+
+.modal-editor-step { background: #0d0d0d; border: 1px solid rgba(0,255,0,0.2); padding: 14px 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 16px; font-size: 12px; }
+.modal-editor-step.active { border-color: #00ff00; background: rgba(0,255,0,0.05); }
+.modal-editor-step .num { width: 28px; height: 28px; background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); color: #00ff00; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; }
+.modal-editor-arrow { text-align: center; color: rgba(0,255,0,0.3); margin: 4px 0; font-size: 16px; }
+
+.modal-settings-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(0,255,0,0.05); }
+.modal-settings-name { font-size: 12px; color: #fff; font-weight: 900; margin-bottom: 4px; letter-spacing: 0.05em; }
+.modal-settings-desc { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.05em; }
+.modal-toggle { width: 44px; height: 24px; background: rgba(0,255,0,0.2); border: 1px solid #00ff00; border-radius: 12px; position: relative; }
+.modal-toggle::after { content: ''; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 8px #00ff00; }
+.modal-toggle.off { background: #1a1a1a; border-color: rgba(0,255,0,0.3); }
+.modal-toggle.off::after { left: 2px; right: auto; background: #555; box-shadow: none; }
+.modal-hotkey { display: flex; gap: 4px; align-items: center; }
+.modal-hotkey-key { background: #1a1a1a; border: 1px solid rgba(0,255,0,0.3); padding: 4px 10px; font-size: 10px; color: #00ff00; font-family: monospace; font-weight: 900; }
+
+</style>
+</head>
+<body>
+<!-- Body content will be added by next step -->
+
+<nav class="top-nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg viewBox="-1 -1 15 16">
+        <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+        <rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+      </svg>
+      PIXEL MOUSE
+    </div>
+    <div class="section-jumper">
+      <button class="jumper-btn active" data-scene="0">1</button>
+      <button class="jumper-btn" data-scene="1">2</button>
+      <button class="jumper-btn" data-scene="2">3</button>
+      <button class="jumper-btn" data-scene="3">4</button>
+      <button class="jumper-btn" data-scene="4">5</button>
+      <button class="jumper-btn" data-scene="5">6</button>
+    </div>
+    <div class="controls-info">
+      <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> NAV</span>
+      <span><kbd>SPACE</kbd> NEXT</span>
+    </div>
+  </div>
+</nav>
+
+<div class="stage" id="stage">
+
+  <div class="scene active" data-scene="0">
+    <div class="scene-content scene-welcome">
+      <div class="scene-pretitle">// PEBBLY_PIXEL_MOUSE</div>
+      <h1 class="welcome-title">MEET<br>{BOT}</h1>
+      <p class="welcome-subtitle">
+        Hi! I'm <strong style="color:#00ff00;">{BOT}</strong> &mdash; your desktop automation companion.<br>
+        I walk on your taskbar, record macros, and click for you.<br>
+        Click below to start the tour, or use arrow keys.
+      </p>
+      <button class="start-button" onclick="nextScene()">&#9654; START TOUR</button>
+    </div>
+  </div>
+
+  <div class="scene" data-scene="1">
+    <div class="scene-content">
+      <div class="scene-pretitle">// SCENE 02 / 06</div>
+      <h2 class="scene-title">I WALK ON YOUR DESKTOP</h2>
+      <p class="scene-desc">Watch my legs &mdash; they actually move (4-frame animation, like Mario).</p>
+      <div class="desktop-stage">
+        <div class="desk-icon" style="top: 20px; left: 20px;"><div class="desk-icon-img">&#128193;</div><div class="desk-icon-label">Documents</div></div>
+        <div class="desk-icon" style="top: 110px; left: 20px;"><div class="desk-icon-img">&#127918;</div><div class="desk-icon-label">Games</div></div>
+        <div class="desk-icon" style="top: 20px; right: 20px;"><div class="desk-icon-img">&#9881;</div><div class="desk-icon-label">Settings</div></div>
+        <div class="demo-walking-bot">
+          <div class="bot-direction">
+
+<div class="bot-frame f1">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f2">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="3" height="1" fill="#00ff00"/><rect x="10" y="13" width="2" height="1" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f3">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f4">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="4" y="12" width="3" height="1" fill="#00ff00"/><rect x="5" y="13" width="2" height="1" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+
+          </div>
+        </div>
+        <div class="fake-taskbar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-scene="2">
+    <div class="scene-content">
+      <div class="scene-pretitle">// SCENE 03 / 06</div>
+      <h2 class="scene-title">12 STATES OF MIND</h2>
+      <p class="scene-desc">My mood changes based on what's happening</p>
+      <div class="emotion-grid">
+
+        <div class="emotion-card">
+          <div class="emotion-bot emotion-walk-frames">
+            <div class="bot-frame f1">
+              <svg viewBox="-1 -1 15 16">
+                <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+                <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+                <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+              </svg>
+            </div>
+            <div class="bot-frame f2">
+              <svg viewBox="-1 -1 15 16">
+                <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+                <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+                <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="3" height="1" fill="#00ff00"/><rect x="10" y="13" width="2" height="1" fill="#00ff00"/>
+              </svg>
+            </div>
+            <div class="bot-frame f3">
+              <svg viewBox="-1 -1 15 16">
+                <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+                <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+                <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+              </svg>
+            </div>
+            <div class="bot-frame f4">
+              <svg viewBox="-1 -1 15 16">
+                <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+                <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+                <rect x="4" y="12" width="3" height="1" fill="#00ff00"/><rect x="5" y="13" width="2" height="1" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+              </svg>
+            </div>
+          </div>
+          <div class="emotion-label">WALKING</div>
+          <div class="emotion-desc">한가하게</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-run"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+<rect x="11" y="9" width="1" height="1" fill="#ffffff"/><rect x="12" y="10" width="1" height="1" fill="#ffffff"/>
+</svg></div>
+          <div class="emotion-label">RUNNING</div>
+          <div class="emotion-desc">매크로 실행</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-fly"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00aaff"/><rect x="1" y="1" width="11" height="5" fill="#00aaff"/><rect x="0" y="6" width="13" height="1" fill="#00aaff"/><rect x="0" y="7" width="1" height="4" fill="#00aaff"/><rect x="2" y="7" width="9" height="4" fill="#00aaff"/><rect x="12" y="7" width="1" height="4" fill="#00aaff"/><rect x="0" y="11" width="13" height="1" fill="#00aaff"/><rect x="2" y="12" width="2" height="2" fill="#00aaff"/><rect x="9" y="12" width="2" height="2" fill="#00aaff"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#003366"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#003366"/><rect x="4" y="5" width="5" height="1" fill="#003366"/>
+
+</svg></div>
+          <div class="emotion-label">FLYING</div>
+          <div class="emotion-desc">이미지 매칭</div>
+        </div>
+        <div class="emotion-card">
+          <div class="zzz zzz-1">Z</div><div class="zzz zzz-2">z</div>
+          <div class="emotion-bot anim-sleep"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#666"/><rect x="1" y="1" width="11" height="5" fill="#666"/><rect x="0" y="6" width="13" height="1" fill="#666"/><rect x="0" y="7" width="1" height="4" fill="#666"/><rect x="2" y="7" width="9" height="4" fill="#666"/><rect x="12" y="7" width="1" height="4" fill="#666"/><rect x="0" y="11" width="13" height="1" fill="#666"/><rect x="2" y="12" width="2" height="2" fill="#666"/><rect x="9" y="12" width="2" height="2" fill="#666"/><rect x="3" y="3" width="2" height="1" fill="#333"/><rect x="8" y="3" width="2" height="1" fill="#333"/><rect x="5" y="5" width="3" height="1" fill="#444"/></svg></div>
+          <div class="emotion-label">SLEEPING</div>
+          <div class="emotion-desc">5분 무동작</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-jump"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+<rect x="4" y="5" width="5" height="2" fill="#007700"/>
+</svg></div>
+          <div class="emotion-label">JUMPING</div>
+          <div class="emotion-desc">시작/종료</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-spin"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00aaff"/><rect x="1" y="1" width="11" height="5" fill="#00aaff"/><rect x="0" y="6" width="13" height="1" fill="#00aaff"/><rect x="0" y="7" width="1" height="4" fill="#00aaff"/><rect x="2" y="7" width="9" height="4" fill="#00aaff"/><rect x="12" y="7" width="1" height="4" fill="#00aaff"/><rect x="0" y="11" width="13" height="1" fill="#00aaff"/><rect x="2" y="12" width="2" height="2" fill="#00aaff"/><rect x="9" y="12" width="2" height="2" fill="#00aaff"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#003366"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#003366"/><rect x="4" y="5" width="5" height="1" fill="#003366"/>
+
+</svg></div>
+          <div class="emotion-label">LOADING</div>
+          <div class="emotion-desc">처리 중</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-wave"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+<rect x="3" y="5" width="7" height="1" fill="#007700"/><rect x="4" y="6" width="5" height="1" fill="#007700"/>
+</svg></div>
+          <div class="emotion-label">WAVING</div>
+          <div class="emotion-desc">앱 시작</div>
+        </div>
+        <div class="emotion-card">
+          <div class="confused-marks">? ?</div>
+          <div class="emotion-bot anim-confused"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#ffaa00"/><rect x="1" y="1" width="11" height="5" fill="#ffaa00"/><rect x="0" y="6" width="13" height="1" fill="#ffaa00"/><rect x="0" y="7" width="1" height="4" fill="#ffaa00"/><rect x="2" y="7" width="9" height="4" fill="#ffaa00"/><rect x="12" y="7" width="1" height="4" fill="#ffaa00"/><rect x="0" y="11" width="13" height="1" fill="#ffaa00"/><rect x="2" y="12" width="2" height="2" fill="#ffaa00"/><rect x="9" y="12" width="2" height="2" fill="#ffaa00"/><rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#aa6600"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#aa6600"/><rect x="3" y="5" width="1" height="1" fill="#aa6600"/><rect x="5" y="5" width="1" height="1" fill="#aa6600"/><rect x="7" y="5" width="1" height="1" fill="#aa6600"/><rect x="9" y="5" width="1" height="1" fill="#aa6600"/></svg></div>
+          <div class="emotion-label">CONFUSED</div>
+          <div class="emotion-desc">매칭 실패</div>
+        </div>
+        <div class="emotion-card">
+          <div class="confetti conf-1"></div><div class="confetti conf-2"></div><div class="confetti conf-3"></div>
+          <div class="emotion-bot anim-celebrate"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#ffd700"/><rect x="1" y="1" width="11" height="5" fill="#ffd700"/><rect x="0" y="6" width="13" height="1" fill="#ffd700"/><rect x="0" y="7" width="1" height="4" fill="#ffd700"/><rect x="2" y="7" width="9" height="4" fill="#ffd700"/><rect x="12" y="7" width="1" height="4" fill="#ffd700"/><rect x="0" y="11" width="13" height="1" fill="#ffd700"/><rect x="2" y="12" width="2" height="2" fill="#ffd700"/><rect x="9" y="12" width="2" height="2" fill="#ffd700"/><rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#ff8800"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#ff8800"/><rect x="3" y="5" width="7" height="2" fill="#aa6600"/><rect x="4" y="7" width="5" height="1" fill="#aa6600"/></svg></div>
+          <div class="emotion-label">CELEBRATE</div>
+          <div class="emotion-desc">매크로 완료</div>
+        </div>
+        <div class="emotion-card">
+          <div class="steam steam-1">&#128162;</div><div class="steam steam-2">&#128162;</div>
+          <div class="emotion-bot anim-angry"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#ff4444"/><rect x="1" y="1" width="11" height="5" fill="#ff4444"/><rect x="0" y="6" width="13" height="1" fill="#ff4444"/><rect x="0" y="7" width="1" height="4" fill="#ff4444"/><rect x="2" y="7" width="9" height="4" fill="#ff4444"/><rect x="12" y="7" width="1" height="4" fill="#ff4444"/><rect x="0" y="11" width="13" height="1" fill="#ff4444"/><rect x="2" y="12" width="2" height="2" fill="#ff4444"/><rect x="9" y="12" width="2" height="2" fill="#ff4444"/><rect x="3" y="2" width="2" height="1" fill="#770000"/><rect x="8" y="2" width="2" height="1" fill="#770000"/><rect x="3" y="3" width="2" height="1" fill="#ff0000"/><rect x="8" y="3" width="2" height="1" fill="#ff0000"/><rect x="4" y="6" width="5" height="1" fill="#770000"/></svg></div>
+          <div class="emotion-label">ANGRY</div>
+          <div class="emotion-desc">에러 발생</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-peek"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/><rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="4" y="3" width="1" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="9" y="3" width="1" height="1" fill="#00aaff"/><rect x="5" y="5" width="3" height="1" fill="#007700"/></svg></div>
+          <div class="emotion-label">PEEKING</div>
+          <div class="emotion-desc">호기심</div>
+        </div>
+        <div class="emotion-card">
+          
+          <div class="emotion-bot anim-typing"><svg viewBox="-1 -1 15 16">
+<rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+<rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+<rect x="5" y="5" width="3" height="1" fill="#007700"/>
+</svg></div>
+          <div class="emotion-label">TYPING</div>
+          <div class="emotion-desc">집중 입력</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-scene="3">
+    <div class="scene-content">
+      <div class="scene-pretitle">// SCENE 04 / 06</div>
+      <h2 class="scene-title">FULL APP INTERFACE</h2>
+      <p class="scene-desc">When you need more control, open the main app</p>
+      <div class="app-screens-grid">
+        <div class="mini-app-window" onclick="openModal('dashboard')"><div class="click-hint">CLICK TO EXPAND</div>
+          <div class="mini-titlebar">// PIXEL MOUSE _ MACROS<div class="mini-win-controls">_ &#9633; &#215;</div></div>
+          <div class="mini-body" style="padding: 0;">
+            <div class="scene-label-overlay">DASHBOARD</div>
+            <div class="mini-body-dashboard">
+              <div class="mini-sidebar">
+                <div class="mini-sidebar-item active">&#128203; MACROS</div>
+                <div class="mini-sidebar-item">&#127916; RECORD</div>
+                <div class="mini-sidebar-item">&#128202; STATS</div>
+                <div class="mini-sidebar-item">&#9881; CONFIG</div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-macro running"><span>&#127918; Game AFK</span><span style="color:#00ff00;">&bull;02:34</span></div>
+                <div class="mini-macro"><span>&#128202; Excel Entry</span><span>F9</span></div>
+                <div class="mini-macro"><span>&#127760; Form Filler</span><span>Ctrl+1</span></div>
+                <div class="mini-macro"><span>&#128432; Auto Click</span><span>F7</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-app-window" onclick="openModal('recording')"><div class="click-hint">CLICK TO EXPAND</div>
+          <div class="mini-titlebar">// PIXEL MOUSE _ RECORDING<div class="mini-win-controls">_ &#9633; &#215;</div></div>
+          <div class="mini-body" style="padding: 0;">
+            <div class="scene-label-overlay">RECORDING</div>
+            <div class="mini-recording">
+              <div class="mini-rec-bot"><svg viewBox="-1 -1 15 16"><rect x="2" y="0" width="9" height="1" fill="#ff4444"/><rect x="1" y="1" width="11" height="5" fill="#ff4444"/><rect x="0" y="6" width="13" height="1" fill="#ff4444"/><rect x="0" y="7" width="1" height="4" fill="#ff4444"/><rect x="2" y="7" width="9" height="4" fill="#ff4444"/><rect x="12" y="7" width="1" height="4" fill="#ff4444"/><rect x="0" y="11" width="13" height="1" fill="#ff4444"/><rect x="2" y="12" width="2" height="2" fill="#ff4444"/><rect x="9" y="12" width="2" height="2" fill="#ff4444"/><rect x="3" y="3" width="2" height="1" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#ffffff"/><rect x="5" y="5" width="3" height="2" fill="#770000"/></svg></div>
+              <div class="mini-rec-text">&bull; REC</div>
+              <div class="mini-rec-time">00:01:23 &middot; 47 actions</div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-app-window" onclick="openModal('editor')"><div class="click-hint">CLICK TO EXPAND</div>
+          <div class="mini-titlebar">// PIXEL MOUSE _ EDITOR<div class="mini-win-controls">_ &#9633; &#215;</div></div>
+          <div class="mini-body">
+            <div class="scene-label-overlay">EDITOR</div>
+            <div style="font-size: 9px; color: rgba(255,255,255,0.7); line-height: 1.6;">
+              <div style="background: rgba(0,255,0,0.05); padding: 6px; border-left: 2px solid #00ff00; margin-bottom: 4px;"><strong style="color: #00ff00;">1.</strong> &#128432; Click @ 1234, 567</div>
+              <div style="background: rgba(0,255,0,0.05); padding: 6px; border-left: 2px solid #00ff00; margin-bottom: 4px;"><strong style="color: #00ff00;">2.</strong> &#9200; Wait 2.5s</div>
+              <div style="background: rgba(0,170,255,0.1); padding: 6px; border-left: 2px solid #00aaff; margin-bottom: 4px;"><strong style="color: #00aaff;">3.</strong> &#128444; Find image</div>
+              <div style="background: rgba(0,255,0,0.05); padding: 6px; border-left: 2px solid #00ff00;"><strong style="color: #00ff00;">4.</strong> &#128257; Loop 50&times;</div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-app-window" onclick="openModal('settings')"><div class="click-hint">CLICK TO EXPAND</div>
+          <div class="mini-titlebar">// PIXEL MOUSE _ SETTINGS<div class="mini-win-controls">_ &#9633; &#215;</div></div>
+          <div class="mini-body">
+            <div class="scene-label-overlay">SETTINGS</div>
+            <div class="mini-settings-list">
+              <div class="mini-setting-row"><span>Start at login</span><div class="mini-toggle"></div></div>
+              <div class="mini-setting-row"><span>Show widget</span><div class="mini-toggle"></div></div>
+              <div class="mini-setting-row"><span>Auto update</span><div class="mini-toggle off"></div></div>
+              <div class="mini-setting-row"><span>F8: Start/Stop</span><span style="color: #00ff00;">[F8]</span></div>
+              <div class="mini-setting-row"><span>F9: Pause</span><span style="color: #00ff00;">[F9]</span></div>
+              <div class="mini-setting-row"><span>Pro license</span><span style="color: #ffd700;">&#11088; ACTIVE</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-scene="4">
+    <div class="scene-content">
+      <div class="scene-pretitle">// SCENE 05 / 06</div>
+      <h2 class="scene-title">CLICK ME &middot; I EXPAND</h2>
+      <p class="scene-desc">Click the floating BOT and a quick menu appears</p>
+      <div class="widget-stage">
+        <div class="desk-icon" style="top: 20px; left: 20px;"><div class="desk-icon-img">&#128193;</div><div class="desk-icon-label">Documents</div></div>
+        <div class="desk-icon" style="top: 110px; left: 20px;"><div class="desk-icon-img">&#127918;</div><div class="desk-icon-label">Games</div></div>
+        <div class="desk-icon" style="top: 200px; left: 20px;"><div class="desk-icon-img">&#127760;</div><div class="desk-icon-label">Browser</div></div>
+        <div class="desk-icon" style="top: 20px; right: 20px;"><div class="desk-icon-img">&#9881;</div><div class="desk-icon-label">Settings</div></div>
+        <div class="demo-widget-bot" style="top: 50%; left: 25%;">
+          <svg viewBox="-1 -1 15 16">
+            <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+            <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+          </svg>
+        </div>
+        <div class="expanded-menu" style="top: 30%; left: 32%;">
+          <div class="menu-header">
+            <div class="menu-status"><div class="status-dot"></div>RUNNING</div>
+            <span style="font-size: 8px; color: rgba(0,255,0,0.5);">02:34</span>
+          </div>
+          <div class="menu-info"><strong>Game AFK Farm</strong><br>234 actions executed<br>Next: Click @ 1234, 567</div>
+          <div class="menu-actions">
+            <button class="menu-btn">&#9208;</button>
+            <button class="menu-btn danger">&#9209;</button>
+            <button class="menu-btn">&#9210;</button>
+          </div>
+          <div class="menu-list">
+            <div class="menu-item-mini"><span>&#127918; Game AFK Farm</span><span class="menu-shortcut">F8 &bull;</span></div>
+            <div class="menu-item-mini"><span>&#128202; Excel Data Entry</span><span class="menu-shortcut">F9</span></div>
+            <div class="menu-item-mini"><span>&#127760; Form Filler</span><span class="menu-shortcut">Ctrl+1</span></div>
+          </div>
+        </div>
+        <div class="widget-instructions">&#128161; BOT IS DRAGGABLE &middot; ALWAYS-ON-TOP &middot; CLICK TO EXPAND</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene" data-scene="5">
+    <div class="scene-content scene-finale">
+      <div class="scene-pretitle">// SCENE 06 / 06</div>
+      <h2 class="finale-title">THAT'S ME!<br>{BOT}</h2>
+      <p class="finale-detail">
+        I'm in <strong>active design</strong> right now.<br>
+        Real development starts <strong>August 2026</strong>.<br>
+        Beta launch: <strong>December 2026</strong>.<br><br>
+        Built in public from Seoul &#127472;&#127479;
+      </p>
+      <div class="finale-stats">
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">EMOTIONS</div></div>
+        <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">FRAMES/WALK</div></div>
+        <div class="stat-card"><div class="stat-num">&infin;</div><div class="stat-label">PERSONALITY</div></div>
+      </div>
+      <a href="https://pebblylabs.com" class="finale-cta">&#9654; JOIN THE WAITLIST</a>
+      <p style="margin-top: 30px; font-size: 10px; color: rgba(0,255,0,0.4); letter-spacing: 0.2em;">
+        Press &larr; to go back &middot; Or click any number above to jump
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="bot-guide idle" id="botGuide">
+  <div class="bot-guide-inner">
+
+<div class="bot-frame f1">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f2">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="3" height="1" fill="#00ff00"/><rect x="10" y="13" width="2" height="1" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f3">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="3" y="12" width="2" height="2" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+<div class="bot-frame f4">
+  <svg viewBox="-1 -1 15 16">
+    <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/>
+    <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#00aaff"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#00aaff"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+    <rect x="4" y="12" width="3" height="1" fill="#00ff00"/><rect x="5" y="13" width="2" height="1" fill="#00ff00"/><rect x="8" y="12" width="2" height="2" fill="#00ff00"/>
+  </svg>
+</div>
+
+  </div>
+</div>
+
+<div class="bot-speech hidden" id="botSpeech">Click me to start!</div>
+
+
+<!-- App Screen Modals -->
+<div class="app-modal" id="appModal" onclick="closeModalOnBg(event)">
+  <div class="app-modal-window">
+    <div class="app-modal-titlebar">
+      <span id="modalTitle">// PIXEL MOUSE _ DASHBOARD</span>
+      <button class="app-modal-close" onclick="closeModal()">CLOSE [ESC]</button>
+    </div>
+    <div class="app-modal-body" id="modalBody">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+</div>
+
+<script>
+let currentScene = 0;
+const totalScenes = 6;
+const bot = document.getElementById('botGuide');
+const speech = document.getElementById('botSpeech');
+const scenes = document.querySelectorAll('.scene');
+const jumperBtns = document.querySelectorAll('.jumper-btn');
+
+const botPositions = [
+  { x: 50, y: 75, msg: "안녕! 클릭해서 투어 시작!", facingLeft: false },
+  { x: 15, y: 70, msg: "이렇게 걸어다녀요 →", facingLeft: false },
+  { x: 88, y: 30, msg: "12가지 표정 보세요!", facingLeft: true },
+  { x: 90, y: 50, msg: "앱 화면들 ←", facingLeft: true },
+  { x: 15, y: 80, msg: "위젯 모드!", facingLeft: false },
+  { x: 50, y: 30, msg: "끝! 함께해요!", facingLeft: false }
+];
+
+function goToScene(index) {
+  if (index < 0 || index >= totalScenes) return;
+  scenes[currentScene].classList.remove('active');
+  jumperBtns[currentScene].classList.remove('active');
+  currentScene = index;
+  scenes[currentScene].classList.add('active');
+  jumperBtns[currentScene].classList.add('active');
+  moveBotToScene(index);
+}
+
+function nextScene() { if (currentScene < totalScenes - 1) goToScene(currentScene + 1); }
+function prevScene() { if (currentScene > 0) goToScene(currentScene - 1); }
+
+function moveBotToScene(sceneIndex) {
+  const pos = botPositions[sceneIndex];
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const x = (vw * pos.x / 100) - 40;
+  const y = (vh * pos.y / 100) - 40;
+  bot.style.left = x + 'px';
+  bot.style.top = y + 'px';
+  if (pos.facingLeft) bot.classList.add('facing-left');
+  else bot.classList.remove('facing-left');
+  speech.textContent = pos.msg;
+  speech.style.left = (x + 40) + 'px';
+  speech.style.top = (y - 50) + 'px';
+  speech.style.transform = 'translateX(-50%)';
+  speech.classList.remove('hidden');
+  clearTimeout(window.speechTimeout);
+  window.speechTimeout = setTimeout(() => speech.classList.add('hidden'), 4000);
+}
+
+window.addEventListener('load', () => setTimeout(() => moveBotToScene(0), 500));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextScene(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); prevScene(); }
+});
+
+jumperBtns.forEach((btn, i) => btn.addEventListener('click', () => goToScene(i)));
+
+let isDragging = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+let startX, startY;
+
+bot.addEventListener('mousedown', (e) => {
+  startX = e.clientX; startY = e.clientY;
+  dragOffsetX = e.clientX - bot.offsetLeft;
+  dragOffsetY = e.clientY - bot.offsetTop;
+  isDragging = false;
+  bot.style.transition = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (startX !== undefined && (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)) {
+    isDragging = true;
+  }
+  if (isDragging) {
+    bot.style.left = (e.clientX - dragOffsetX) + 'px';
+    bot.style.top = (e.clientY - dragOffsetY) + 'px';
+    speech.classList.add('hidden');
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  startX = undefined; startY = undefined;
+  bot.style.transition = 'left 1.2s ease, top 1.2s ease';
+  setTimeout(() => { isDragging = false; }, 100);
+});
+
+bot.addEventListener('click', (e) => { if (!isDragging) nextScene(); });
+
+window.addEventListener('resize', () => moveBotToScene(currentScene));
+
+// ===== MODAL FUNCTIONS =====
+const modalContent = {
+  dashboard: {
+    title: '// PIXEL MOUSE _ DASHBOARD',
+    html: `
+      <div class="modal-dashboard">
+        <div class="modal-sidebar">
+          <div class="modal-sidebar-section">
+            <div class="modal-sidebar-label">MAIN</div>
+            <div class="modal-sidebar-item active">📋 MACROS</div>
+            <div class="modal-sidebar-item">🎬 RECORDINGS</div>
+            <div class="modal-sidebar-item">📊 HISTORY</div>
+            <div class="modal-sidebar-item">📚 TEMPLATES</div>
+          </div>
+          <div class="modal-sidebar-section">
+            <div class="modal-sidebar-label">TOOLS</div>
+            <div class="modal-sidebar-item">🎯 COORDINATES</div>
+            <div class="modal-sidebar-item">🖼️ IMAGE MATCH</div>
+            <div class="modal-sidebar-item">📜 SCRIPTS</div>
+          </div>
+          <div class="modal-sidebar-section">
+            <div class="modal-sidebar-label">SYSTEM</div>
+            <div class="modal-sidebar-item">⚙️ SETTINGS</div>
+            <div class="modal-sidebar-item">💎 UPGRADE</div>
+          </div>
+        </div>
+        <div class="modal-content">
+          <div class="modal-stats">
+            <div class="modal-stat"><div class="modal-stat-num">12</div><div class="modal-stat-label">MACROS</div></div>
+            <div class="modal-stat"><div class="modal-stat-num">847</div><div class="modal-stat-label">RUNS TODAY</div></div>
+            <div class="modal-stat"><div class="modal-stat-num">02:34</div><div class="modal-stat-label">RUNTIME</div></div>
+            <div class="modal-stat"><div class="modal-stat-num">98.2%</div><div class="modal-stat-label">SUCCESS</div></div>
+          </div>
+          <div style="font-size: 11px; color: #00ff00; letter-spacing: 0.15em; margin-bottom: 12px; font-weight: 900;">// MY MACROS</div>
+          <div class="modal-macro-item running">
+            <div class="icon">🎮</div>
+            <div class="info"><div class="name">Game AFK Farm</div><div class="meta">12 actions · F8 hotkey · LOOP</div></div>
+            <div style="font-size: 10px; color: #00ff00;">●02:34</div>
+          </div>
+          <div class="modal-macro-item">
+            <div class="icon">📊</div>
+            <div class="info"><div class="name">Excel Data Entry</div><div class="meta">47 actions · F9 hotkey · ONCE</div></div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.5);">2h ago</div>
+          </div>
+          <div class="modal-macro-item">
+            <div class="icon">🌐</div>
+            <div class="info"><div class="name">Website Form Filler</div><div class="meta">8 actions · Ctrl+1 hotkey</div></div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.5);">Yesterday</div>
+          </div>
+          <div class="modal-macro-item">
+            <div class="icon">🧪</div>
+            <div class="info"><div class="name">UI Test Suite</div><div class="meta">156 actions · Ctrl+T · WITH ASSERTS</div></div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.5);">1 week ago</div>
+          </div>
+          <div class="modal-macro-item">
+            <div class="icon">🖱️</div>
+            <div class="info"><div class="name">Auto Click @1234,567</div><div class="meta">1 action · F7 · INTERVAL 1s</div></div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.5);">Today</div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  recording: {
+    title: '// PIXEL MOUSE _ RECORDING IN PROGRESS',
+    html: `
+      <div class="modal-recording">
+        <div class="modal-rec-bot">
+          <svg viewBox="-1 -1 15 16" style="width:100%;height:100%;image-rendering:pixelated;">
+            <rect x="2" y="0" width="9" height="1" fill="#ff4444"/><rect x="1" y="1" width="11" height="5" fill="#ff4444"/><rect x="0" y="6" width="13" height="1" fill="#ff4444"/><rect x="0" y="7" width="1" height="4" fill="#ff4444"/><rect x="2" y="7" width="9" height="4" fill="#ff4444"/><rect x="12" y="7" width="1" height="4" fill="#ff4444"/><rect x="0" y="11" width="13" height="1" fill="#ff4444"/><rect x="2" y="12" width="2" height="2" fill="#ff4444"/><rect x="9" y="12" width="2" height="2" fill="#ff4444"/>
+            <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#ff0000"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#ff0000"/><rect x="5" y="5" width="3" height="2" fill="#770000"/>
+          </svg>
+        </div>
+        <div class="modal-rec-title">● RECORDING</div>
+        <div class="modal-rec-time">00:01:23</div>
+        <div class="modal-rec-stats">
+          <div class="modal-rec-stat"><div class="modal-rec-stat-num">47</div><div class="modal-rec-stat-label">ACTIONS</div></div>
+          <div class="modal-rec-stat"><div class="modal-rec-stat-num">23</div><div class="modal-rec-stat-label">CLICKS</div></div>
+          <div class="modal-rec-stat"><div class="modal-rec-stat-num">18</div><div class="modal-rec-stat-label">KEYS</div></div>
+          <div class="modal-rec-stat"><div class="modal-rec-stat-num">6</div><div class="modal-rec-stat-label">SCROLLS</div></div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button style="padding:12px 24px; background:#ff4444; border:2px solid #ff4444; color:#fff; font-family:monospace; font-size:12px; font-weight:900; letter-spacing:0.2em; cursor:pointer;">⏹ STOP & SAVE</button>
+          <button style="padding:12px 24px; background:transparent; border:2px solid rgba(255,255,255,0.3); color:#fff; font-family:monospace; font-size:12px; font-weight:900; letter-spacing:0.2em; cursor:pointer;">⏸ PAUSE</button>
+        </div>
+        <div style="margin-top:30px; font-size:10px; color:rgba(255,255,255,0.6); letter-spacing:0.15em;">
+          <span style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); padding:2px 8px; margin:0 4px; font-family:monospace;">F8</span> STOP · 
+          <span style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); padding:2px 8px; margin:0 4px; font-family:monospace;">F9</span> PAUSE · 
+          <span style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); padding:2px 8px; margin:0 4px; font-family:monospace;">ESC</span> DISCARD
+        </div>
+      </div>
+    `
+  },
+  editor: {
+    title: '// PIXEL MOUSE _ EDITOR · GAME AFK FARM',
+    html: `
+      <div style="font-size: 11px; color: #00ff00; letter-spacing: 0.15em; margin-bottom: 16px; font-weight: 900;">// WORKFLOW · 12 STEPS</div>
+      <div class="modal-editor-step">
+        <div class="num">1</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">🖱️ Click at coordinates</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">X: 1234, Y: 567 · Left click · 100ms hold</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓</div>
+      <div class="modal-editor-step">
+        <div class="num">2</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">⏰ Wait</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">2.5 seconds</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓</div>
+      <div class="modal-editor-step active">
+        <div class="num">3</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">🖼️ Find image · battle_button.png</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">Threshold: 0.85 · Timeout: 5s · ⚡ Selected</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓</div>
+      <div class="modal-editor-step">
+        <div class="num">4</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">🔀 If image found</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">→ Continue · Else: Skip to step 8</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓</div>
+      <div class="modal-editor-step">
+        <div class="num">5</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">🎯 Click image</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">battle_button.png at center</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓</div>
+      <div class="modal-editor-step">
+        <div class="num">6</div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:900; margin-bottom:4px;">🔁 Loop · 50 times</div>
+          <div style="font-size:10px; color:rgba(255,255,255,0.5);">Or until condition met</div>
+        </div>
+      </div>
+      <div class="modal-editor-arrow">↓ ...</div>
+    `
+  },
+  settings: {
+    title: '// PIXEL MOUSE _ SETTINGS',
+    html: `
+      <div style="background: linear-gradient(135deg, rgba(0,255,0,0.1), rgba(0,170,255,0.05)); border: 2px solid #00ff00; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px;">
+        <div style="width:50px; height:50px;">
+          <svg viewBox="-1 -1 15 16" style="width:100%;height:100%;image-rendering:pixelated;">
+            <rect x="2" y="0" width="9" height="1" fill="#00ff00"/><rect x="1" y="1" width="11" height="5" fill="#00ff00"/><rect x="0" y="6" width="13" height="1" fill="#00ff00"/><rect x="0" y="7" width="1" height="4" fill="#00ff00"/><rect x="2" y="7" width="9" height="4" fill="#00ff00"/><rect x="12" y="7" width="1" height="4" fill="#00ff00"/><rect x="0" y="11" width="13" height="1" fill="#00ff00"/><rect x="2" y="12" width="2" height="2" fill="#00ff00"/><rect x="9" y="12" width="2" height="2" fill="#00ff00"/>
+            <rect x="3" y="2" width="2" height="2" fill="#ffffff"/><rect x="3" y="3" width="2" height="1" fill="#ffd700"/><rect x="8" y="2" width="2" height="2" fill="#ffffff"/><rect x="8" y="3" width="2" height="1" fill="#ffd700"/><rect x="4" y="5" width="5" height="1" fill="#007700"/>
+          </svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px; color:#00ff00; font-weight:900; letter-spacing:0.1em; margin-bottom:4px;">PIXEL MOUSE PRO ⭐</div>
+          <div style="font-size:11px; color:rgba(255,255,255,0.7); margin-bottom:8px;">Founding Member · Lifetime License</div>
+          <div style="font-size:10px; color:rgba(0,255,0,0.6); letter-spacing:0.1em;">Activated · 2026-04-28</div>
+        </div>
+      </div>
+
+      <div style="font-size: 12px; color: #00ff00; letter-spacing: 0.2em; margin: 24px 0 12px; font-weight: 900; padding-bottom: 8px; border-bottom: 1px solid rgba(0,255,0,0.1);">// GLOBAL HOTKEYS</div>
+      
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">START / STOP MACRO</div>
+          <div class="modal-settings-desc">현재 매크로 실행 또는 정지</div>
+        </div>
+        <div class="modal-hotkey"><span class="modal-hotkey-key">F8</span></div>
+      </div>
+      
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">PAUSE / RESUME</div>
+          <div class="modal-settings-desc">실행 중인 매크로 일시정지</div>
+        </div>
+        <div class="modal-hotkey"><span class="modal-hotkey-key">F9</span></div>
+      </div>
+      
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">RECORD NEW MACRO</div>
+          <div class="modal-settings-desc">새 매크로 녹화 시작</div>
+        </div>
+        <div class="modal-hotkey">
+          <span class="modal-hotkey-key">CTRL</span>
+          <span style="color:rgba(0,255,0,0.5);">+</span>
+          <span class="modal-hotkey-key">SHIFT</span>
+          <span style="color:rgba(0,255,0,0.5);">+</span>
+          <span class="modal-hotkey-key">R</span>
+        </div>
+      </div>
+
+      <div style="font-size: 12px; color: #00ff00; letter-spacing: 0.2em; margin: 24px 0 12px; font-weight: 900; padding-bottom: 8px; border-bottom: 1px solid rgba(0,255,0,0.1);">// GENERAL</div>
+
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">START AT LOGIN</div>
+          <div class="modal-settings-desc">시스템 시작 시 자동 실행</div>
+        </div>
+        <div class="modal-toggle"></div>
+      </div>
+      
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">SHOW MINI WIDGET</div>
+          <div class="modal-settings-desc">매크로 실행 시 미니 위젯 표시</div>
+        </div>
+        <div class="modal-toggle"></div>
+      </div>
+      
+      <div class="modal-settings-row">
+        <div>
+          <div class="modal-settings-name">AUTO UPDATE</div>
+          <div class="modal-settings-desc">새 버전 자동 다운로드</div>
+        </div>
+        <div class="modal-toggle off"></div>
+      </div>
+    `
+  }
+};
+
+function openModal(type) {
+  const modal = document.getElementById('appModal');
+  const title = document.getElementById('modalTitle');
+  const body = document.getElementById('modalBody');
+  if (modalContent[type]) {
+    title.textContent = modalContent[type].title;
+    body.innerHTML = modalContent[type].html;
+    modal.classList.add('active');
+  }
+}
+
+function closeModal() {
+  document.getElementById('appModal').classList.remove('active');
+}
+
+function closeModalOnBg(e) {
+  if (e.target.id === 'appModal') closeModal();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+</script>
+
+
+</body>
+</html>
